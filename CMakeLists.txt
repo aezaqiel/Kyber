@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.30)
 
-project(Application LANGUAGES C CXX)
+project(Kyber LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 

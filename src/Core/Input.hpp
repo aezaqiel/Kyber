@@ -3,7 +3,7 @@
 #include "KeyCodes.hpp"
 #include "Events/CoreEvents.hpp"
 
-namespace Core {
+namespace Kyber::Core {
 
     struct KeyData
     {

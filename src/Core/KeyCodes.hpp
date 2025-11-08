@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Core {
+namespace Kyber::Core {
 
     enum class KeyCode : u16
     {

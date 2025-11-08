@@ -4,7 +4,7 @@
 
 struct GLFWwindow;
 
-namespace Core {
+namespace Kyber::Core {
 
     class Window
     {

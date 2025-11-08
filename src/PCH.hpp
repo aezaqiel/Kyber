@@ -120,7 +120,7 @@
 #include <stop_token>
 #include <thread>
 
-// Application headers (allow use globally without #include)
+// Application headers
 
 #include "Types.hpp"
 #include "Core/Logger.hpp"

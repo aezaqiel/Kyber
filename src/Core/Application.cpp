@@ -2,7 +2,7 @@
 
 #include "Input.hpp"
 
-namespace Core {
+namespace Kyber::Core {
 
     Application::Application()
     {

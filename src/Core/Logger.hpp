@@ -8,7 +8,7 @@
 
 #include <spdlog/spdlog.h>
 
-namespace Core {
+namespace Kyber::Core {
 
     class Logger
     {

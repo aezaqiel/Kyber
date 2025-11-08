@@ -3,7 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-namespace Core {
+namespace Kyber::Core {
 
     Window::Window(const Config& config)
     {

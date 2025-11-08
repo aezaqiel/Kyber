@@ -4,7 +4,7 @@
 #include "Events/CoreEvents.hpp"
 #include "Window.hpp"
 
-namespace Core {
+namespace Kyber::Core {
 
     class Application
     {

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Core {
+namespace Kyber::Core {
 
     struct BaseEvent { bool handled { false }; };
 

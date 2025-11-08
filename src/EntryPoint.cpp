@@ -2,11 +2,13 @@
 
 int main()
 {
-    Core::Logger::Init();
+    using namespace Kyber::Core;
 
-    Core::Application* app = new Core::Application();
+    Logger::Init();
+
+    Application* app = new Application();
     app->Run();
     delete app;
 
-    Core::Logger::Shutdown();
+    Logger::Shutdown();
 }

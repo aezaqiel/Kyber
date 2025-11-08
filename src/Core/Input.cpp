@@ -2,7 +2,7 @@
 
 #include "Application.hpp"
 
-namespace Core {
+namespace Kyber::Core {
 
     bool Input::IsKeyPressed(KeyCode key)
     {

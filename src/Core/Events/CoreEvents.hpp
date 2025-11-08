@@ -3,7 +3,7 @@
 #include "Event.hpp"
 #include "Core/KeyCodes.hpp"
 
-namespace Core {
+namespace Kyber::Core {
 
     struct WindowClosedEvent final : public BaseEvent
     {
