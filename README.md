@@ -1,0 +1,3 @@
+# Application
+
+Template application architecture
