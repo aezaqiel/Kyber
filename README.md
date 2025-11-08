@@ -1,3 +1,3 @@
 # Kyber
 
-PathTracer
+Vulkan Research Platform
