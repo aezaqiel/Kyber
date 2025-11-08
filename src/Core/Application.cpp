@@ -10,10 +10,12 @@ namespace Kyber::Core {
 
         m_EventQueue = std::make_unique<EventQueue<CoreEvents>>();
 
-        m_Window = std::make_shared<Window>(Window::Config(1280, 720, "Renderer"));
+        m_Window = std::make_shared<Window>(Window::Config(1280, 720, "Kyber"));
         m_Window->BindEventQueue(m_EventQueue.get());
 
-        Input::Init();
+        m_JobSystem = std::make_unique<JobSystem>();
+
+        RegisterOnEvent(Input::OnEvent);
     }
 
     void Application::Run()

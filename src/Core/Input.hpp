@@ -36,7 +36,6 @@ namespace Kyber::Core {
         static std::pair<f32, f32> GetMousePosition();
 
     protected:
-        static void Init();
         static void Update();
         static void OnEvent(EventDispatcher<CoreEvents>& dispatcher);
 

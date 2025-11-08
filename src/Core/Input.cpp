@@ -61,11 +61,6 @@ namespace Kyber::Core {
         return s_MousePos;
     }
 
-    void Input::Init()
-    {
-        Application::RegisterOnEvent(Input::OnEvent);
-    }
-
     void Input::Update()
     {
         for (auto& [key, data] : s_KeyData) {
