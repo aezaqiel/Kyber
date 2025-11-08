@@ -16,14 +16,14 @@ namespace Kyber::Core {
 
         std::vector<spdlog::sink_ptr> sinks {
             std::make_shared<spdlog::sinks::stdout_color_sink_mt>(),
-            std::make_shared<spdlog::sinks::basic_file_sink_mt>(logDir + "/Application.log", true)
+            std::make_shared<spdlog::sinks::basic_file_sink_mt>(logDir + "/Kyber.log", true)
         };
 
         for (auto& sink : sinks) {
             sink->set_pattern("[%H:%M:%S %z] [%^%l%$] [thread %t] %v");
         }
 
-        auto logger = std::make_shared<spdlog::logger>("Application", sinks.begin(), sinks.end());
+        auto logger = std::make_shared<spdlog::logger>("Kyber", sinks.begin(), sinks.end());
         logger->set_level(spdlog::level::trace);
         logger->flush_on(spdlog::level::err);
 

@@ -12,8 +12,6 @@ namespace Kyber::Core {
 
         m_Window = std::make_shared<Window>(Window::Config(1280, 720, "Kyber"));
         m_Window->BindEventQueue(m_EventQueue.get());
-
-        m_JobSystem = std::make_unique<JobSystem>();
     }
 
     void Application::Run()
