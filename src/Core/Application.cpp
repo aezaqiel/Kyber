@@ -12,6 +12,8 @@ namespace Kyber::Core {
 
         m_Window = std::make_shared<Window>(Window::Config(1280, 720, "Kyber"));
         m_Window->BindEventQueue(m_EventQueue.get());
+
+        m_Renderer = std::make_unique<Renderer::Renderer>(m_Window);
     }
 
     void Application::Run()
@@ -30,6 +32,9 @@ namespace Kyber::Core {
             }
 
             if (!m_Minimized) {
+                Renderer::RenderPacket packet;
+
+                m_Renderer->SubmitFrame(std::move(packet));
             }
         }
     }

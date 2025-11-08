@@ -44,6 +44,8 @@ namespace Kyber::Core {
             latch.wait();
         }
 
+        inline static u32 GetWorkerCount() { return m_WorkerCount; }
+
     private:
         static void WorkerLoop(std::stop_token stop);
 

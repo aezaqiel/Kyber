@@ -10,7 +10,7 @@ namespace Kyber::Core {
         }
 
         if (workerCount == 0) {
-            m_WorkerCount = std::max(1u, std::thread::hardware_concurrency() - 1);
+            m_WorkerCount = std::max(1u, std::thread::hardware_concurrency() - 2);
         } else {
             m_WorkerCount = workerCount;
         }
