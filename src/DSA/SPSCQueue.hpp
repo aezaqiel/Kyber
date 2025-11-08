@@ -10,8 +10,6 @@ namespace Kyber::DSA {
             : m_Capacity(capacity + 1), m_Allocator(alloc)
         {
             m_Buffer = m_Allocator.allocate(m_Capacity);
-            m_Head.store(0, std::memory_order_relaxed);
-            m_Tail.store(0, std::memory_order_relaxed);
         }
 
         ~SPSCQueue()
@@ -108,10 +106,10 @@ namespace Kyber::DSA {
         T* m_Buffer;
         Allocator m_Allocator;
 
-        alignas(CACHE_LINE_SIZE) std::atomic<usize> m_Head;
+        alignas(CACHE_LINE_SIZE) std::atomic<usize> m_Head = 0;
         char pad0_[CACHE_LINE_SIZE - sizeof(std::atomic<usize>)];
 
-        alignas(CACHE_LINE_SIZE) std::atomic<usize> m_Tail;
+        alignas(CACHE_LINE_SIZE) std::atomic<usize> m_Tail = 0;
         char pad1_[CACHE_LINE_SIZE - sizeof(std::atomic<usize>)];
     };
 
