@@ -1,9 +1,16 @@
 #pragma once
 
-#include "Event.hpp"
-#include "Core/KeyCodes.hpp"
+#include "KeyCodes.hpp"
+#include "DSA/SPSCQueue.hpp"
 
 namespace Kyber::Core {
+
+    struct BaseEvent { bool handled { false }; };
+
+    template <typename T>
+    concept IsEvent = requires {
+        { std::is_base_of_v<BaseEvent, std::remove_cvref_t<T>> };
+    };
 
     struct WindowClosedEvent final : public BaseEvent
     {
@@ -118,7 +125,10 @@ namespace Kyber::Core {
             : MouseEvent(x, y) {}
     };
 
-    using CoreEvents = EventVariant<
+    template <IsEvent... TEvent>
+    using EventVariant = std::variant<TEvent...>;
+
+    using Event = EventVariant<
         WindowClosedEvent,
         WindowResizedEvent,
         WindowMovedEvent,
@@ -132,5 +142,28 @@ namespace Kyber::Core {
         MouseMovedEvent,
         MouseScrolledEvent
     >;
+
+    class EventDispatcher
+    {
+    public:
+        constexpr EventDispatcher(Event& event) noexcept
+            : m_Event(event) {}
+
+        template <IsEvent T, typename Func>
+            requires std::is_invocable_r_v<bool, Func, const T&>
+        inline void Dispatch(Func&& func) noexcept
+        {
+            if (T* event = std::get_if<T>(&m_Event)) {
+                if (!event->handled) {
+                    event->handled = std::invoke(std::forward<Func>(func), *event);
+                }
+            }
+        }
+
+    private:
+        Event& m_Event;
+    };
+
+    using EventQueue = DSA::SPSCQueue<Event>;
 
 }

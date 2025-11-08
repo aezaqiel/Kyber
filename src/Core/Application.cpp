@@ -8,14 +8,12 @@ namespace Kyber::Core {
     {
         m_Timer = std::make_unique<Timer>();
 
-        m_EventQueue = std::make_unique<EventQueue<CoreEvents>>();
+        m_EventQueue = std::make_unique<EventQueue>(1024);
 
         m_Window = std::make_shared<Window>(Window::Config(1280, 720, "Kyber"));
         m_Window->BindEventQueue(m_EventQueue.get());
 
         m_JobSystem = std::make_unique<JobSystem>();
-
-        RegisterOnEvent(Input::OnEvent);
     }
 
     void Application::Run()
@@ -40,8 +38,9 @@ namespace Kyber::Core {
 
     void Application::ProcessEvents()
     {
-        for (auto& event : m_EventQueue->Poll()) {
-            EventDispatcher<CoreEvents> dispatcher(event);
+        Event event;
+        while (m_EventQueue->Pop(event)) {
+            EventDispatcher dispatcher(event);
 
             dispatcher.Dispatch<WindowClosedEvent>([&](const WindowClosedEvent&) {
                 m_Running = false;
@@ -53,9 +52,7 @@ namespace Kyber::Core {
                 return false;
             });
 
-            for (const auto& listener : s_EventListeners) {
-                listener(dispatcher);
-            }
+            Input::OnEvent(dispatcher);
         }
     }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/Events/CoreEvents.hpp"
+#include "Events.hpp"
 
 struct GLFWwindow;
 
@@ -30,7 +30,7 @@ namespace Kyber::Core {
 
         std::string GetTitle() const;
 
-        inline void BindEventQueue(EventQueue<CoreEvents>* queue)
+        inline void BindEventQueue(EventQueue* queue)
         {
             m_Data.queue = queue;
         }
@@ -46,7 +46,7 @@ namespace Kyber::Core {
         {
             u32 width = 0;
             u32 height = 0;
-            EventQueue<CoreEvents>* queue = nullptr;
+            EventQueue* queue = nullptr;
         };
 
     private:

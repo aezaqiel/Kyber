@@ -1,7 +1,7 @@
 #pragma once
 
 #include "KeyCodes.hpp"
-#include "Events/CoreEvents.hpp"
+#include "Events.hpp"
 
 namespace Kyber::Core {
 
@@ -37,7 +37,7 @@ namespace Kyber::Core {
 
     protected:
         static void Update();
-        static void OnEvent(EventDispatcher<CoreEvents>& dispatcher);
+        static void OnEvent(EventDispatcher& dispatcher);
 
     private:
         static void UpdateKeyState(KeyCode key, KeyState state);

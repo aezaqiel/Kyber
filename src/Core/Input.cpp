@@ -82,7 +82,7 @@ namespace Kyber::Core {
         }
     }
 
-    void Input::OnEvent(EventDispatcher<CoreEvents>& dispatcher)
+    void Input::OnEvent(EventDispatcher& dispatcher)
     {
         dispatcher.Dispatch<KeyPressedEvent>([](const KeyPressedEvent& e) {
             if (!e.repeat) Input::UpdateKeyState(e.keycode, KeyState::Pressed);
