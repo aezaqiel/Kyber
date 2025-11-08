@@ -1,7 +1,7 @@
 #pragma once
 
 #include "RenderPacket.hpp"
-#include "DSA/MPMCQueue.hpp"
+#include "DSA/SPSCQueue.hpp"
 
 namespace Kyber::Core {
 
@@ -11,7 +11,7 @@ namespace Kyber::Core {
 
 namespace Kyber::Renderer {
 
-    using RenderQueue = DSA::MPMCQueue<RenderPacket>;
+    using RenderQueue = DSA::SPSCQueue<RenderPacket>;
 
     class Renderer
     {

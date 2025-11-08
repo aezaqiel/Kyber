@@ -14,7 +14,7 @@ namespace Kyber::DSA {
 
         ~SPSCQueue()
         {
-            while (!IsEmpty()) {
+            while (!IsEmptyApprox()) {
                 std::destroy_at(GetSlot(m_Head.load(std::memory_order_relaxed)));
                 m_Head.store(
                     (m_Head.load(std::memory_order_relaxed) + 1) % m_Capacity,
@@ -32,7 +32,7 @@ namespace Kyber::DSA {
 
         template <typename... Args>
             requires (std::is_constructible_v<T, Args...>)
-        bool Emplace(Args&&... args)
+        bool TryEmplace(Args&&... args)
         {
             const usize currentTail = m_Tail.load(std::memory_order_relaxed);
             const usize nextTail = (currentTail + 1) % m_Capacity;
@@ -44,44 +44,46 @@ namespace Kyber::DSA {
             std::construct_at(GetSlot(currentTail), std::forward<Args>(args)...);
 
             m_Tail.store(nextTail, std::memory_order_release);
+            m_Tail.notify_one();
 
             return true;
         }
 
-        bool Push(const T& value) requires (std::is_copy_constructible_v<T>)
+        bool TryPush(const T& value) requires (std::is_copy_constructible_v<T>)
         {
-            return Emplace(value);
+            return TryEmplace(value);
         }
 
-        bool Push(T&& value) requires (std::is_move_constructible_v<T>)
+        bool TryPush(T&& value) requires (std::is_move_constructible_v<T>)
         {
-            return Emplace(std::move(value));
+            return TryEmplace(std::move(value));
         }
 
-        bool Pop(T& out)
+        std::optional<T> TryPop()
         {
             const usize currentHead = m_Head.load(std::memory_order_relaxed);
 
             if (currentHead == m_Tail.load(std::memory_order_acquire)) {
-                return false;
+                return std::nullopt;
             }
 
             T* slot = GetSlot(currentHead);
-            out = std::move(*slot);
+            T out = std::move(*slot);
 
             std::destroy_at(slot);
 
             m_Head.store((currentHead + 1) % m_Capacity, std::memory_order_release);
+            m_Head.notify_one();
 
-            return true;
+            return out;
         }
 
-        bool IsEmpty() const
+        bool IsEmptyApprox() const
         {
             return m_Tail.load(std::memory_order_relaxed) == m_Head.load(std::memory_order_relaxed);
         }
 
-        usize Size() const
+        usize SizeApprox() const
         {
             const usize currentTail = m_Tail.load(std::memory_order_relaxed);
             const usize currentHead = m_Head.load(std::memory_order_relaxed);
@@ -91,6 +93,42 @@ namespace Kyber::DSA {
             }
 
             return m_Capacity - (currentHead - currentTail);
+        }
+
+        template <typename... Args>
+            requires (std::is_constructible_v<T, Args...>)
+        void Emplace(Args&&... args)
+        {
+            while (!TryEmplace(std::forward<Args>(args)...)) {
+                std::this_thread::yield();
+            }
+        }
+
+        void Push(const T& value) requires (std::is_copy_constructible_v<T>)
+        {
+            Emplace(value);
+        }
+
+        void Push(T&& value) requires (std::is_move_constructible_v<T>)
+        {
+            Emplace(std::move(value));
+        }
+
+        T Pop()
+        {
+            usize currentHead = m_Head.load(std::memory_order_relaxed);
+            while (currentHead == m_Tail.load(std::memory_order_acquire)) {
+                m_Tail.wait(currentHead, std::memory_order_relaxed);
+            }
+
+            T* slot = GetSlot(currentHead);
+            T out = std::move(*slot);
+
+            std::destroy_at(slot);
+
+            m_Head.store((currentHead + 1) % m_Capacity, std::memory_order_release);
+
+            return out;
         }
 
     private:

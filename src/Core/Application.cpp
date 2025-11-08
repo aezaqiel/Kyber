@@ -41,9 +41,8 @@ namespace Kyber::Core {
 
     void Application::ProcessEvents()
     {
-        Event event;
-        while (m_EventQueue->Pop(event)) {
-            EventDispatcher dispatcher(event);
+        while (auto event = m_EventQueue->TryPop()) {
+            EventDispatcher dispatcher(event.value());
 
             dispatcher.Dispatch<WindowClosedEvent>([&](const WindowClosedEvent&) {
                 m_Running = false;

@@ -58,7 +58,17 @@ namespace Kyber::DSA {
             slot.sequence.notify_one();
         }
 
-        void Pop(T& out) noexcept
+        void Push(const T& value) requires (std::is_copy_constructible_v<T>)
+        {
+            Emplace(value);
+        }
+
+        void Push(T&& value) requires (std::is_move_constructible_v<T>)
+        {
+            Emplace(value);
+        }
+
+        T Pop() noexcept
         {
             const usize pos = m_Tail.fetch_add(1, std::memory_order_relaxed);
 
@@ -73,12 +83,14 @@ namespace Kyber::DSA {
                 slot.sequence.wait(currentSeq, std::memory_order_relaxed);
             }
 
-            out = std::move(*slot.GetData());
+            T out = std::move(*slot.GetData());
 
             std::destroy_at(slot.GetData());
 
             slot.sequence.store(pos + m_Capacity, std::memory_order_release);
             slot.sequence.notify_one();
+
+            return out;
         }
 
         template <typename... Args>

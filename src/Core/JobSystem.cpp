@@ -48,15 +48,9 @@ namespace Kyber::Core {
 
     void JobSystem::WorkerLoop(std::stop_token stop)
     {
-        Job job;
         while (!stop.stop_requested()) {
-            m_JobQueue->Pop(job);
-            if (job) {
+            if (const auto& job = m_JobQueue->Pop()) {
                 job();
-            } else {
-                if (stop.stop_requested()) {
-                    break;
-                }
             }
         }
     }

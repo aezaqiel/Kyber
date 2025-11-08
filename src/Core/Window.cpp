@@ -35,7 +35,9 @@ namespace Kyber::Core {
         glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window) {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
             if (data.queue) {
-                data.queue->Push(WindowClosedEvent());
+                if (!data.queue->TryPush(WindowClosedEvent())) {
+                    LOG_WARN("Event queue full, dropping event");
+                }
             }
         });
 
@@ -45,7 +47,9 @@ namespace Kyber::Core {
             data.height = static_cast<u32>(height);
 
             if (data.queue) {
-                data.queue->Push(WindowResizedEvent(width, height));
+                if (!data.queue->TryPush(WindowResizedEvent(width, height))) {
+                    LOG_WARN("Event queue full, dropping event");
+                }
             }
         });
 
@@ -53,7 +57,9 @@ namespace Kyber::Core {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
             if (data.queue) {
-                data.queue->Push(WindowMovedEvent(x, y));
+                if (!data.queue->TryPush(WindowMovedEvent(x, y))) {
+                    LOG_WARN("Event queue full, dropping event");
+                }
             }
         });
 
@@ -61,7 +67,9 @@ namespace Kyber::Core {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
             if (data.queue) {
-                data.queue->Push(WindowMinimizeEvent(iconified));
+                if (!data.queue->TryPush(WindowMinimizeEvent(iconified))) {
+                    LOG_WARN("Event queue full, dropping event");
+                }
             }
         });
 
@@ -69,7 +77,9 @@ namespace Kyber::Core {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
             if (data.queue) {
-                data.queue->Push(WindowFocusEvent(focused));
+                if (!data.queue->TryPush(WindowFocusEvent(focused))) {
+                    LOG_WARN("Event queue full, dropping event");
+                }
             }
         });
 
@@ -79,13 +89,19 @@ namespace Kyber::Core {
             if (data.queue) {
                 switch (action) {
                     case GLFW_PRESS: {
-                        data.queue->Push(KeyPressedEvent(static_cast<KeyCode>(key), false));
+                        if (!data.queue->TryPush(KeyPressedEvent(static_cast<KeyCode>(key), false))) {
+                            LOG_WARN("Event queue full, dropping event");
+                        }
                     } break;
                     case GLFW_RELEASE: {
-                        data.queue->Push(KeyReleasedEvent(static_cast<KeyCode>(key)));
+                        if (!data.queue->TryPush(KeyReleasedEvent(static_cast<KeyCode>(key)))) {
+                            LOG_WARN("Event queue full, dropping event");
+                        }
                     } break;
                     case GLFW_REPEAT: {
-                        data.queue->Push(KeyPressedEvent(static_cast<KeyCode>(key), true));
+                        if (!data.queue->TryPush(KeyPressedEvent(static_cast<KeyCode>(key), true))) {
+                            LOG_WARN("Event queue full, dropping event");
+                        }
                     } break;
                     default:
                         LOG_WARN("Unknown key action {}", action);
@@ -97,7 +113,9 @@ namespace Kyber::Core {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
             if (data.queue) {
-                data.queue->Push(KeyTypedEvent(codepoint));
+                if (!data.queue->TryPush(KeyTypedEvent(codepoint))) {
+                    LOG_WARN("Event queue full, dropping event");
+                }
             }
         });
 
@@ -107,10 +125,14 @@ namespace Kyber::Core {
             if (data.queue) {
                 switch (action) {
                     case GLFW_PRESS: {
-                        data.queue->Push(MouseButtonPressedEvent(static_cast<MouseButton>(button)));
+                        if (!data.queue->TryPush(MouseButtonPressedEvent(static_cast<MouseButton>(button)))) {
+                            LOG_WARN("Event queue full, dropping event");
+                        }
                     } break;
                     case GLFW_RELEASE: {
-                        data.queue->Push(MouseButtonReleasedEvent(static_cast<MouseButton>(button)));
+                        if (!data.queue->TryPush(MouseButtonReleasedEvent(static_cast<MouseButton>(button)))) {
+                            LOG_WARN("Event queue full, dropping event");
+                        }
                     } break;
                     default:
                         LOG_WARN("Unknown mouse button action {}", action);
@@ -122,7 +144,9 @@ namespace Kyber::Core {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
             if (data.queue) {
-                data.queue->Push(MouseMovedEvent(x, y));
+                if (!data.queue->TryPush(MouseMovedEvent(x, y))) {
+                    LOG_WARN("Event queue full, dropping event");
+                }
             }
         });
 
@@ -130,7 +154,9 @@ namespace Kyber::Core {
             WindowData& data = *reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
             if (data.queue) {
-                data.queue->Push(MouseScrolledEvent(x, y));
+                if (!data.queue->TryPush(MouseScrolledEvent(x, y))) {
+                    LOG_WARN("Event queue full, dropping event");
+                }
             }
         });
 

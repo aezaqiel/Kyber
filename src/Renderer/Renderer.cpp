@@ -15,6 +15,11 @@ namespace Kyber::Renderer {
     {
         m_Running.store(false);
 
+        RenderPacket poison;
+        poison.shutdown = true;
+
+        m_RenderQueue->Emplace(std::move(poison));
+
         if (m_RenderThread.joinable()) {
             m_RenderThread.join();
         }
@@ -26,20 +31,21 @@ namespace Kyber::Renderer {
             return;
         }
 
-        m_RenderQueue->Emplace(std::move(packet));
+        if (!m_RenderQueue->TryEmplace(std::move(packet))) {
+            // LOG_WARN("Render queue full, frame skipped");
+        }
     }
 
     void Renderer::RenderLoop()
     {
         LOG_INFO("Render thread spawned");
 
-        RenderPacket packet;
-        while (true) {
-            if (!m_Running.load()) {
+        while (m_Running.load(std::memory_order_acquire)) {
+            RenderPacket packet = m_RenderQueue->Pop();
+            if (packet.shutdown) {
                 break;
             }
 
-            m_RenderQueue->Pop(packet);
             DrawFrame(packet);
         }
 
