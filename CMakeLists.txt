@@ -13,6 +13,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(thirdparty/spdlog)
 add_subdirectory(thirdparty/glfw)
+add_subdirectory(thirdparty/glm)
 
 file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/**.cpp
@@ -37,6 +38,7 @@ target_link_libraries(${PROJECT_NAME}
 PRIVATE
     spdlog
     glfw
+    glm
 )
 
 target_compile_definitions(${PROJECT_NAME}
