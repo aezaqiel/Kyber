@@ -13,6 +13,12 @@ namespace Kyber::Core {
         m_Window = std::make_shared<Window>(Window::Config(1280, 720, "Kyber"));
         m_Window->BindEventQueue(m_EventQueue.get());
 
+        m_Camera = std::make_unique<Scene::Camera>(
+            45.0f,
+            static_cast<f32>(m_Window->GetWidth()) / static_cast<f32>(m_Window->GetHeight()),
+            0.1f, 1000.0f
+        );
+
         m_Renderer = std::make_unique<Renderer::Renderer>(m_Window);
     }
 
@@ -22,9 +28,8 @@ namespace Kyber::Core {
             m_Timer->Tick();
 
             Window::PollEvents();
-            Input::Update();
-
             ProcessEvents();
+            Input::Update();
 
             // NOTE: Maybe we dont want this?
             if (Input::IsKeyDown(KeyCode::Escape)) {
@@ -32,8 +37,11 @@ namespace Kyber::Core {
             }
 
             if (!m_Minimized) {
-                Renderer::RenderPacket packet;
+                if (m_Camera->OnUpdate(*m_Timer)) {
+                    // TODO: Renderer update camera
+                }
 
+                Renderer::RenderPacket packet;
                 m_Renderer->SubmitFrame(std::move(packet));
             }
         }
@@ -55,6 +63,8 @@ namespace Kyber::Core {
             });
 
             Input::OnEvent(dispatcher);
+
+            m_Camera->OnEvent(dispatcher);
         }
     }
 

@@ -45,6 +45,7 @@ target_compile_definitions(${PROJECT_NAME}
 PRIVATE
     NOMINMAX
     GLFW_INCLUDE_NONE
+    GLM_ENABLE_EXPERIMENTAL
 )
 
 if(WIN32)
