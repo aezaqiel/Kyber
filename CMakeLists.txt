@@ -14,6 +14,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_subdirectory(thirdparty/spdlog)
 add_subdirectory(thirdparty/glfw)
 add_subdirectory(thirdparty/glm)
+add_subdirectory(thirdparty/tinygltf)
 
 file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/**.cpp
@@ -32,6 +33,7 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME}
 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stb
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -39,6 +41,7 @@ PRIVATE
     spdlog
     glfw
     glm
+    tinygltf
 )
 
 target_compile_definitions(${PROJECT_NAME}
@@ -46,6 +49,7 @@ PRIVATE
     NOMINMAX
     GLFW_INCLUDE_NONE
     GLM_ENABLE_EXPERIMENTAL
+    TINYGLTF_NOEXCEPTION
 )
 
 if(WIN32)
