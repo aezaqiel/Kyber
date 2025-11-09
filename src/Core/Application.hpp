@@ -5,6 +5,7 @@
 #include "Events.hpp"
 
 #include "Scene/Camera.hpp"
+#include "Scene/SceneData.hpp"
 
 #include "Renderer/Renderer.hpp"
 
@@ -12,6 +13,7 @@ namespace Kyber::Core {
 
     class Application
     {
+        using SceneQueue = DSA::SPSCQueue<Scene::SceneData>;
     public:
         Application();
         ~Application() = default;
@@ -29,6 +31,7 @@ namespace Kyber::Core {
         std::unique_ptr<EventQueue> m_EventQueue;
         std::shared_ptr<Window> m_Window;
 
+        std::unique_ptr<SceneQueue> m_SceneQueue;
         std::unique_ptr<Scene::Camera> m_Camera;
 
         std::unique_ptr<Renderer::Renderer> m_Renderer;

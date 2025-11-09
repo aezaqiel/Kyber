@@ -11,6 +11,9 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(TINYGLTF_HEADER_ONLY ON CACHE INTERNAL "" FORCE)
+set(TINYGLTF_INSTALL OFF CACHE INTERNAL "" FORCE)
+
 add_subdirectory(thirdparty/spdlog)
 add_subdirectory(thirdparty/glfw)
 add_subdirectory(thirdparty/glm)

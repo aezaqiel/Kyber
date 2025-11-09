@@ -1,6 +1,8 @@
 #include "Application.hpp"
 
 #include "Input.hpp"
+#include "JobSystem.hpp"
+#include "Assets/GlTFLoader.hpp"
 
 namespace Kyber::Core {
 
@@ -13,13 +15,21 @@ namespace Kyber::Core {
         m_Window = std::make_shared<Window>(Window::Config(1280, 720, "Kyber"));
         m_Window->BindEventQueue(m_EventQueue.get());
 
+        m_Renderer = std::make_unique<Renderer::Renderer>(m_Window);
+
         m_Camera = std::make_unique<Scene::Camera>(
             45.0f,
             static_cast<f32>(m_Window->GetWidth()) / static_cast<f32>(m_Window->GetHeight()),
             0.1f, 1000.0f
         );
 
-        m_Renderer = std::make_unique<Renderer::Renderer>(m_Window);
+        m_SceneQueue = std::make_unique<SceneQueue>(1);
+
+        JobSystem::Submit([this] {
+            if (auto scene = Assets::GlTFLoader::Load("../assets/Suzanne.glb")) {
+                m_SceneQueue->Emplace(std::move(scene.value()));
+            }
+        });
     }
 
     void Application::Run()
@@ -39,6 +49,12 @@ namespace Kyber::Core {
             if (!m_Minimized) {
                 if (m_Camera->OnUpdate(*m_Timer)) {
                     // TODO: Renderer update camera
+                    LOG_DEBUG("Renderer update camera");
+                }
+
+                if (auto scene = m_SceneQueue->TryPop()) {
+                    // TODO: Renderer update scene
+                    LOG_DEBUG("Renderer update scene");
                 }
 
                 Renderer::RenderPacket packet;
