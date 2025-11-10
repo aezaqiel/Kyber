@@ -2,6 +2,9 @@
 
 #include "Core/Window.hpp"
 
+#include "RHI/Instance.hpp"
+#include "RHI/Device.hpp"
+
 namespace Kyber::Renderer {
 
     Renderer::Renderer(const std::shared_ptr<Core::Window>& window)
@@ -11,7 +14,8 @@ namespace Kyber::Renderer {
         m_Width = window->GetWidth();
         m_Height = window->GetHeight();
 
-        m_Instance = std::make_unique<RHI::Instance>(window);
+        m_Instance = std::make_shared<RHI::Instance>(window);
+        m_Device = std::make_shared<RHI::Device>(m_Instance);
     }
 
     Renderer::~Renderer()

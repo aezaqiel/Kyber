@@ -6,9 +6,20 @@
 #include "Scene/SceneData.hpp"
 #include "DSA/MPMCQueue.hpp"
 
-#include "RHI/Instance.hpp"
+namespace Kyber::Core {
+
+    class Window;
+
+}
 
 namespace Kyber::Renderer {
+
+    namespace RHI {
+
+        class Instance;
+        class Device;
+    
+    }
 
     class Renderer
     {
@@ -50,7 +61,8 @@ namespace Kyber::Renderer {
 
         CameraData m_CameraData;
 
-        std::unique_ptr<RHI::Instance> m_Instance;
+        std::shared_ptr<RHI::Instance> m_Instance;
+        std::shared_ptr<RHI::Device> m_Device;
 
     private:
         inline static constexpr usize s_FrameInFlight = 3;
