@@ -6,11 +6,7 @@
 #include "Scene/SceneData.hpp"
 #include "DSA/MPMCQueue.hpp"
 
-namespace Kyber::Core {
-
-    class Window;
-
-}
+#include "RHI/Instance.hpp"
 
 namespace Kyber::Renderer {
 
@@ -43,8 +39,6 @@ namespace Kyber::Renderer {
         void UploadScene(Scene::SceneData&& scene);
 
     private:
-        std::shared_ptr<Core::Window> m_Window;
-
         std::jthread m_RenderThread;
         std::stop_source m_StopSource;
 
@@ -55,6 +49,8 @@ namespace Kyber::Renderer {
         u32 m_CurrentSample = 0;
 
         CameraData m_CameraData;
+
+        std::unique_ptr<RHI::Instance> m_Instance;
 
     private:
         inline static constexpr usize s_FrameInFlight = 3;

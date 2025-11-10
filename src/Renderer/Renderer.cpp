@@ -5,12 +5,13 @@
 namespace Kyber::Renderer {
 
     Renderer::Renderer(const std::shared_ptr<Core::Window>& window)
-        : m_Window(window)
     {
         m_CommandQueue = std::make_unique<RenderCommandQueue>(1024);
 
         m_Width = window->GetWidth();
         m_Height = window->GetHeight();
+
+        m_Instance = std::make_unique<RHI::Instance>(window);
     }
 
     Renderer::~Renderer()
