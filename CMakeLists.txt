@@ -25,6 +25,7 @@ add_subdirectory(thirdparty/glfw)
 add_subdirectory(thirdparty/glm)
 add_subdirectory(thirdparty/tinygltf)
 add_subdirectory(thirdparty/volk)
+add_subdirectory(thirdparty/vma)
 
 file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/**.cpp
@@ -53,6 +54,7 @@ PRIVATE
     glm
     tinygltf
     volk
+    VulkanMemoryAllocator
 )
 
 target_compile_definitions(${PROJECT_NAME}
@@ -74,3 +76,10 @@ target_precompile_headers(${PROJECT_NAME}
 PRIVATE
     src/PCH.hpp
 )
+
+if(NOT MSVC)
+    target_compile_options(${PROJECT_NAME}
+    PRIVATE
+        "-Wno-nullability-completeness"
+    )
+endif()
