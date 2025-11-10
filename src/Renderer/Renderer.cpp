@@ -4,6 +4,7 @@
 
 #include "RHI/Instance.hpp"
 #include "RHI/Device.hpp"
+#include "RHI/Swapchain.hpp"
 
 namespace Kyber::Renderer {
 
@@ -16,6 +17,8 @@ namespace Kyber::Renderer {
 
         m_Instance = std::make_shared<RHI::Instance>(window);
         m_Device = std::make_shared<RHI::Device>(m_Instance);
+        m_Swapchain = std::make_unique<RHI::Swapchain>(m_Instance, m_Device);
+        m_Swapchain->Create(window->GetWidth(), window->GetHeight());
     }
 
     Renderer::~Renderer()
@@ -71,7 +74,10 @@ namespace Kyber::Renderer {
             m_CurrentSample++;
         }
 
-        LOG_INFO("Render thread shutting down");
+        LOG_INFO("Renderer stop requested, waiting for device");
+        m_Device->WaitIdle();
+
+        LOG_INFO("Render thread shutdown");
     }
 
     void Renderer::DrawFrame()
@@ -93,6 +99,7 @@ namespace Kyber::Renderer {
     void Renderer::RecreateSwapchain()
     {
         LOG_INFO("Renderer resized ({}, {})", m_Width, m_Height);
+        m_Swapchain->Create(m_Width, m_Height);
     }
 
     void Renderer::UploadScene(Scene::SceneData&& scene)

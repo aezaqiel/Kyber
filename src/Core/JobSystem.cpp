@@ -43,7 +43,7 @@ namespace Kyber::Core {
         m_Workers.clear();
 
         m_JobQueue.reset();
-        LOG_INFO("job system shut down");
+        LOG_INFO("job system shutdown");
     }
 
     void JobSystem::WorkerLoop(std::stop_token stop)

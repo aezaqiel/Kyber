@@ -24,6 +24,8 @@ namespace Kyber::Renderer::RHI {
         inline u32 GetComputeQueueFamily() const { return m_QueueFamily.Compute(); }
         inline u32 GetTransferQueueFamily() const { return m_QueueFamily.Transfer(); }
 
+        inline void WaitIdle() const { vkDeviceWaitIdle(m_Device); }
+
     private:
         struct QueueFamilyIndices
         {

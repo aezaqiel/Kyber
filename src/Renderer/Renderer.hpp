@@ -18,6 +18,7 @@ namespace Kyber::Renderer {
 
         class Instance;
         class Device;
+        class Swapchain;
     
     }
 
@@ -63,6 +64,7 @@ namespace Kyber::Renderer {
 
         std::shared_ptr<RHI::Instance> m_Instance;
         std::shared_ptr<RHI::Device> m_Device;
+        std::unique_ptr<RHI::Swapchain> m_Swapchain;
 
     private:
         inline static constexpr usize s_FrameInFlight = 3;
