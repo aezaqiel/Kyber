@@ -14,10 +14,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(TINYGLTF_HEADER_ONLY ON CACHE INTERNAL "" FORCE)
 set(TINYGLTF_INSTALL OFF CACHE INTERNAL "" FORCE)
 
+find_package(Vulkan REQUIRED)
+
+if(WIN32)
+    set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
+endif()
+
 add_subdirectory(thirdparty/spdlog)
 add_subdirectory(thirdparty/glfw)
 add_subdirectory(thirdparty/glm)
 add_subdirectory(thirdparty/tinygltf)
+add_subdirectory(thirdparty/volk)
 
 file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/**.cpp
@@ -45,6 +52,7 @@ PRIVATE
     glfw
     glm
     tinygltf
+    volk
 )
 
 target_compile_definitions(${PROJECT_NAME}
