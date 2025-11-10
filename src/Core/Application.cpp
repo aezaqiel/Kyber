@@ -23,11 +23,12 @@ namespace Kyber::Core {
             0.1f, 1000.0f
         );
 
-        m_SceneQueue = std::make_unique<SceneQueue>(1);
+        m_Renderer->UpdateCamera(m_Camera->GetCameraData());
 
         JobSystem::Submit([this] {
             if (auto scene = Assets::GlTFLoader::Load("../assets/Suzanne.glb")) {
-                m_SceneQueue->Emplace(std::move(scene.value()));
+                m_Renderer->UpdateScene(std::move(scene.value()));
+                m_Renderer->StartRenderThread();
             }
         });
     }
@@ -47,9 +48,12 @@ namespace Kyber::Core {
             }
 
             if (!m_Minimized) {
-                if (auto scene = m_SceneQueue->TryPop()) {
-                    m_Renderer->UploadScene(scene.value());
-                    m_Renderer->StartRenderThread();
+                if (m_ResizeRequest) {
+                    m_Renderer->RequestResize(
+                        m_ResizeRequest->first,
+                        m_ResizeRequest->second
+                    );
+                    m_ResizeRequest.reset();
                 }
 
                 if (m_Camera->OnUpdate(*m_Timer)) {
@@ -77,7 +81,7 @@ namespace Kyber::Core {
             });
 
             dispatcher.Dispatch<WindowResizedEvent>([&](const WindowResizedEvent& e) {
-                m_Renderer->RequestResize(e.width, e.height);
+                m_ResizeRequest = std::make_pair(e.width, e.height);
                 return false;
             });
 

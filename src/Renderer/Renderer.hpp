@@ -1,7 +1,10 @@
 #pragma once
 
 #include "RenderData.hpp"
+
+#include "Core/Events.hpp"
 #include "Scene/SceneData.hpp"
+#include "DSA/MPMCQueue.hpp"
 
 namespace Kyber::Core {
 
@@ -14,12 +17,18 @@ namespace Kyber::Renderer {
     class Renderer
     {
     public:
+        using RenderCommand = std::function<void(Renderer&)>;
+        using RenderCommandQueue = DSA::MPMCQueue<RenderCommand>;
+
+    public:
         Renderer(const std::shared_ptr<Core::Window>& window);
         ~Renderer();
 
-        void UploadScene(const Scene::SceneData& scene);
         void StartRenderThread();
 
+        void OnEvent(Core::EventDispatcher& dispatcher);
+
+        void UpdateScene(Scene::SceneData&& scene);
         void UpdateCamera(const CameraData& data);
         void RequestResize(u32 width, u32 height);
 
@@ -27,7 +36,11 @@ namespace Kyber::Renderer {
         void RenderLoop(std::stop_token stop);
         void DrawFrame();
 
+        void Submit(RenderCommand&& cmd);
+        void ProcessCommands();
+
         void RecreateSwapchain();
+        void UploadScene(Scene::SceneData&& scene);
 
     private:
         std::shared_ptr<Core::Window> m_Window;
@@ -35,17 +48,13 @@ namespace Kyber::Renderer {
         std::jthread m_RenderThread;
         std::stop_source m_StopSource;
 
+        std::unique_ptr<RenderCommandQueue> m_CommandQueue;
+
         u32 m_Width = 0;
         u32 m_Height = 0;
-        std::mutex m_ResizeMutex;
+        u32 m_CurrentSample = 0;
 
         CameraData m_CameraData;
-        std::mutex m_CameraMutex;
-
-        std::atomic<bool> m_CameraUpdated = false;
-        std::atomic<bool> m_ResizeRequested = false;
-
-        u32 m_CurrentSample = 0;
 
     private:
         inline static constexpr usize s_FrameInFlight = 3;
