@@ -47,18 +47,16 @@ namespace Kyber::Core {
             }
 
             if (!m_Minimized) {
-                if (m_Camera->OnUpdate(*m_Timer)) {
-                    // TODO: Renderer update camera
-                    LOG_DEBUG("Renderer update camera");
-                }
-
                 if (auto scene = m_SceneQueue->TryPop()) {
-                    // TODO: Renderer update scene
-                    LOG_DEBUG("Renderer update scene");
+                    m_Renderer->UploadScene(scene.value());
+                    m_Renderer->StartRenderThread();
                 }
 
-                Renderer::RenderPacket packet;
-                m_Renderer->SubmitFrame(std::move(packet));
+                if (m_Camera->OnUpdate(*m_Timer)) {
+                    m_Renderer->UpdateCamera(
+                        m_Camera->GetCameraData()
+                    );
+                }
             }
         }
     }
@@ -75,6 +73,11 @@ namespace Kyber::Core {
 
             dispatcher.Dispatch<WindowMinimizeEvent>([&](const WindowMinimizeEvent& e) {
                 m_Minimized = e.minimized;
+                return false;
+            });
+
+            dispatcher.Dispatch<WindowResizedEvent>([&](const WindowResizedEvent& e) {
+                m_Renderer->RequestResize(e.width, e.height);
                 return false;
             });
 

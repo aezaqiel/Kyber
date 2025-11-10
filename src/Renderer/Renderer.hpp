@@ -1,7 +1,7 @@
 #pragma once
 
-#include "RenderPacket.hpp"
-#include "DSA/SPSCQueue.hpp"
+#include "RenderData.hpp"
+#include "Scene/SceneData.hpp"
 
 namespace Kyber::Core {
 
@@ -11,32 +11,41 @@ namespace Kyber::Core {
 
 namespace Kyber::Renderer {
 
-    using RenderQueue = DSA::SPSCQueue<RenderPacket>;
-
     class Renderer
     {
     public:
         Renderer(const std::shared_ptr<Core::Window>& window);
         ~Renderer();
 
-        void SubmitFrame(RenderPacket&& packet);
+        void UploadScene(const Scene::SceneData& scene);
+        void StartRenderThread();
 
-        inline static constexpr usize GetFrameInFlight()
-        {
-            return s_FrameInFlight;
-        }
+        void UpdateCamera(const CameraData& data);
+        void RequestResize(u32 width, u32 height);
 
     private:
-        void RenderLoop();
-        void DrawFrame(const RenderPacket& packet);
+        void RenderLoop(std::stop_token stop);
+        void DrawFrame();
+
+        void RecreateSwapchain();
 
     private:
         std::shared_ptr<Core::Window> m_Window;
 
-        std::unique_ptr<RenderQueue> m_RenderQueue;
         std::jthread m_RenderThread;
+        std::stop_source m_StopSource;
 
-        std::atomic<bool> m_Running = true;
+        u32 m_Width = 0;
+        u32 m_Height = 0;
+        std::mutex m_ResizeMutex;
+
+        CameraData m_CameraData;
+        std::mutex m_CameraMutex;
+
+        std::atomic<bool> m_CameraUpdated = false;
+        std::atomic<bool> m_ResizeRequested = false;
+
+        u32 m_CurrentSample = 0;
 
     private:
         inline static constexpr usize s_FrameInFlight = 3;

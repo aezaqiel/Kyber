@@ -7,53 +7,87 @@ namespace Kyber::Renderer {
     Renderer::Renderer(const std::shared_ptr<Core::Window>& window)
         : m_Window(window)
     {
-        m_RenderQueue = std::make_unique<RenderQueue>(s_FrameInFlight);
-        m_RenderThread = std::jthread(&Renderer::RenderLoop, this);
+        m_Width = window->GetWidth();
+        m_Height = window->GetHeight();
     }
 
     Renderer::~Renderer()
     {
-        m_Running.store(false);
-
-        RenderPacket poison;
-        poison.shutdown = true;
-
-        m_RenderQueue->Emplace(std::move(poison));
-
         if (m_RenderThread.joinable()) {
-            m_RenderThread.join();
+            m_StopSource.request_stop();
         }
     }
 
-    void Renderer::SubmitFrame(RenderPacket&& packet)
+    void Renderer::UploadScene(const Scene::SceneData& scene)
     {
-        if (!m_Running.load()) {
+    }
+
+    void Renderer::StartRenderThread()
+    {
+        if (m_RenderThread.joinable()) {
+            LOG_WARN("Render thread already running");
             return;
         }
 
-        if (!m_RenderQueue->TryEmplace(std::move(packet))) {
-            // LOG_WARN("Render queue full, frame skipped");
-        }
+        LOG_INFO("Spawning render thread");
+        m_RenderThread = std::jthread(&Renderer::RenderLoop, this, m_StopSource.get_token());
     }
 
-    void Renderer::RenderLoop()
+    void Renderer::UpdateCamera(const CameraData& data)
+    {
+        std::lock_guard lock(m_CameraMutex);
+        m_CameraData = data;
+        m_CameraUpdated.store(true, std::memory_order_release);
+    }
+
+    void Renderer::RequestResize(u32 width, u32 height)
+    {
+        std::lock_guard lock(m_ResizeMutex);
+        m_Width = width;
+        m_Height = height;
+        m_ResizeRequested.exchange(true, std::memory_order_release);
+    }
+
+    void Renderer::RenderLoop(std::stop_token stop)
     {
         LOG_INFO("Render thread spawned");
 
-        while (m_Running.load(std::memory_order_acquire)) {
-            RenderPacket packet = m_RenderQueue->Pop();
-            if (packet.shutdown) {
-                break;
+        while (!stop.stop_requested()) {
+            if (m_ResizeRequested.exchange(false, std::memory_order_acq_rel)) {
+                RecreateSwapchain();
+                m_CurrentSample = 0;
             }
 
-            DrawFrame(packet);
+            if (m_CameraUpdated.exchange(false, std::memory_order_acq_rel)) {
+                m_CurrentSample = 0;
+            }
+
+            DrawFrame();
+            m_CurrentSample++;
         }
 
         LOG_INFO("Render thread shutting down");
     }
 
-    void Renderer::DrawFrame(const RenderPacket& packet)
+    void Renderer::DrawFrame()
     {
+        CameraData camera;
+        {
+            std::lock_guard lock(m_CameraMutex);
+            camera = m_CameraData;
+        }
+
+        u32 width, height;
+        {
+            std::lock_guard lock(m_ResizeMutex);
+            width = m_Width;
+            height = m_Height;
+        }
+    }
+
+    void Renderer::RecreateSwapchain()
+    {
+        LOG_INFO("Renderer resized ({}, {})", m_Width, m_Height);
     }
 
 }

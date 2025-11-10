@@ -6,6 +6,8 @@
 #include "Core/Timer.hpp"
 #include "Core/Events.hpp"
 
+#include "Renderer/RenderData.hpp"
+
 namespace Kyber::Scene {
 
     class Camera
@@ -19,9 +21,18 @@ namespace Kyber::Scene {
 
         void SetViewportSize(f32 width, f32 height);
 
-        const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
-        const glm::mat4& GetProjMatrix() const { return m_ProjMatrix; }
-        const glm::vec3& GetPosition() const { return m_Position; }
+        inline const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
+        inline const glm::mat4& GetProjMatrix() const { return m_ProjMatrix; }
+        inline const glm::vec3& GetPosition() const { return m_Position; }
+
+        inline Renderer::CameraData GetCameraData() const
+        {
+            return std::move(Renderer::CameraData {
+                .view = m_ViewMatrix,
+                .proj = m_ProjMatrix,
+                .position = m_Position
+            });
+        }
 
     private:
         void RecalculateViewMatrix();
