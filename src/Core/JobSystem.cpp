@@ -12,7 +12,7 @@ namespace Kyber::Core {
         if (workerCount == 0) {
             s_WorkerCount = std::max(1u, std::thread::hardware_concurrency() - 2);
         } else {
-            s_WorkerCount = workerCount;
+            s_WorkerCount = std::min(workerCount, std::thread::hardware_concurrency() - 2);
         }
 
         LOG_INFO("Initializing job system with {} workers", s_WorkerCount);
