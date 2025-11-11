@@ -14,8 +14,8 @@ namespace Kyber::Core {
             requires (std::is_invocable_v<F>)
         inline static void Submit(F&& func)
         {
-            if (m_JobQueue) {
-                m_JobQueue->Emplace(std::forward<F>(func));
+            if (s_JobQueue) {
+                s_JobQueue->Emplace(std::forward<F>(func));
             }
         }
 
@@ -23,14 +23,14 @@ namespace Kyber::Core {
             requires (std::is_invocable_v<F, usize>)
         inline static void Dispatch(usize jobCount, F&& func)
         {
-            if (jobCount == 0 || !m_JobQueue) {
+            if (jobCount == 0 || !s_JobQueue) {
                 return;
             }
 
             std::latch latch(jobCount);
 
             for (usize i = 0; i < jobCount; ++i) {
-                m_JobQueue->Emplace([i, &latch, jobFunc = std::forward<F>(func)]() {
+                s_JobQueue->Emplace([i, &latch, jobFunc = std::forward<F>(func)]() {
                     try {
                         jobFunc(i);
                     } catch (const std::exception& e) {
@@ -44,18 +44,21 @@ namespace Kyber::Core {
             latch.wait();
         }
 
-        inline static u32 GetWorkerCount() { return m_WorkerCount; }
+        inline static u32 GetWorkerCount() { return s_WorkerCount; }
+        inline static u32 GetWorkerIndex() { return s_WorkerIndex; }
 
     private:
-        static void WorkerLoop(std::stop_token stop);
+        static void WorkerLoop(std::stop_token stop, u32 index);
 
     private:
         using Job = std::function<void()>;
 
-        inline static std::unique_ptr<DSA::MPMCQueue<Job>> m_JobQueue;
-        inline static std::vector<std::jthread> m_Workers;
-        inline static std::stop_source m_StopSource;
-        inline static u32 m_WorkerCount = 0;
+        inline static std::unique_ptr<DSA::MPMCQueue<Job>> s_JobQueue;
+        inline static std::vector<std::jthread> s_Workers;
+        inline static std::stop_source s_StopSource;
+        inline static u32 s_WorkerCount = 0;
+
+        inline static thread_local u32 s_WorkerIndex = 0;
     };
 
 }

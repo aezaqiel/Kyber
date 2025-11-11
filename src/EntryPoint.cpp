@@ -6,7 +6,7 @@ int main()
     using namespace Kyber::Core;
 
     Logger::Init();
-    JobSystem::Init();
+    JobSystem::Init(4);
 
     Application* app = new Application();
     app->Run();
