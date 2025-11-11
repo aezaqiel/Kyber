@@ -25,6 +25,7 @@ namespace Kyber::Renderer::RHI {
     void Device::SyncFrame()
     {
         m_HostFrameIndex++;
+
         vkGetSemaphoreCounterValue(m_Device, m_FrameSemaphore, &m_LocalFrameIndex);
         if (m_HostFrameIndex > m_LocalFrameIndex + s_FrameInFlight) {
             u64 wait = m_HostFrameIndex - s_FrameInFlight;

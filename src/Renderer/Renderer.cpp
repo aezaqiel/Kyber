@@ -120,30 +120,39 @@ namespace Kyber::Renderer {
             );
         });
 
-        std::vector<VkSemaphoreSubmitInfo> wait;
-        std::vector<VkSemaphoreSubmitInfo> signal;
+        std::vector<VkSemaphoreSubmitInfo> wait {
+            {
+                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+                .pNext = nullptr,
+                .semaphore = m_Swapchain->GetCurrentImageSemaphore(),
+                .value = 0,
+                .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                .deviceIndex = 0
+            }
+        };
 
-        wait.push_back(VkSemaphoreSubmitInfo {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-            .pNext = nullptr,
-            .semaphore = m_Swapchain->GetCurrentImageSemaphore(),
-            .value = 0,
-            .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .deviceIndex = 0
-        });
-
-        signal.push_back(VkSemaphoreSubmitInfo {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-            .pNext = nullptr,
-            .semaphore = m_Device->GetFrameSemaphore(),
-            .value = m_Device->GetHostIndex(),
-            .stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
-            .deviceIndex = 0
-        });
+        std::vector<VkSemaphoreSubmitInfo> signal {
+            {
+                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+                .pNext = nullptr,
+                .semaphore = m_Device->GetFrameSemaphore(),
+                .value = m_Device->GetHostIndex(),
+                .stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
+                .deviceIndex = 0
+            },
+            {
+                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+                .pNext = nullptr,
+                .semaphore = m_Swapchain->GetPresentSignalSemaphore(),
+                .value = 0,
+                .stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
+                .deviceIndex = 0
+            }
+        };
 
         m_GraphicsCommand->Submit(wait, signal);
 
-        if (m_Swapchain->Present(m_Device->GetHostIndex())) {
+        if (m_Swapchain->Present()) {
             RecreateSwapchain();
             return;
         }
@@ -163,6 +172,9 @@ namespace Kyber::Renderer {
 
     void Renderer::RecreateSwapchain()
     {
+        LOG_INFO("Swapchain recreate ({}, {})", m_Width, m_Height);
+
+        m_Device->WaitIdle();
         m_Swapchain->Create(m_Width, m_Height);
     }
 

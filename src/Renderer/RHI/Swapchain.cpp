@@ -77,7 +77,6 @@ namespace Kyber::Renderer::RHI {
 
         m_Images.resize(m_ImageCount);
         m_ImageViews.resize(m_ImageCount);
-        m_ImageAvailableSemaphores.resize(m_ImageCount);
 
         vkGetSwapchainImagesKHR(m_Device->GetDevice(), m_Swapchain, &m_ImageCount, m_Images.data());
 
@@ -120,8 +119,12 @@ namespace Kyber::Renderer::RHI {
             .flags = 0
         };
 
-        for (auto& semaphore : m_ImageAvailableSemaphores) {
-            VK_CHECK(vkCreateSemaphore(m_Device->GetDevice(), &semaphoreInfo, nullptr, &semaphore));
+        m_ImageAvailableSemaphores.resize(m_ImageCount);
+        m_PresentSignals.resize(m_ImageCount);
+
+        for (u32 i = 0; i < m_ImageCount; ++i) {
+            VK_CHECK(vkCreateSemaphore(m_Device->GetDevice(), &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]));
+            VK_CHECK(vkCreateSemaphore(m_Device->GetDevice(), &semaphoreInfo, nullptr, &m_PresentSignals[i]));
         }
     }
 
@@ -143,27 +146,13 @@ namespace Kyber::Renderer::RHI {
         return result;
     }
 
-    std::optional<VkResult> Swapchain::Present(u64 waitValue)
+    std::optional<VkResult> Swapchain::Present()
     {
-        auto semaphore = m_Device->GetFrameSemaphore();
-        auto wait = m_Device->GetHostIndex();
-
-        VkSemaphoreWaitInfo waitInfo {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .semaphoreCount = 1,
-            .pSemaphores = &semaphore,
-            .pValues = &wait
-        };
-
-        vkWaitSemaphores(m_Device->GetDevice(), &waitInfo, std::numeric_limits<u64>::max());
-
         VkPresentInfoKHR presentInfo {
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .pNext = nullptr,
-            .waitSemaphoreCount = 0,
-            .pWaitSemaphores = nullptr,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores = &m_PresentSignals[m_CurrentSyncIndex],
             .swapchainCount = 1,
             .pSwapchains = &m_Swapchain,
             .pImageIndices = &m_CurrentImageIndex,
@@ -183,14 +172,13 @@ namespace Kyber::Renderer::RHI {
 
     void Swapchain::Destroy()
     {
-        for (auto& semaphore : m_ImageAvailableSemaphores) {
-            vkDestroySemaphore(m_Device->GetDevice(), semaphore, nullptr);
+        for (u32 i = 0; i < m_ImageCount; ++i) {
+            vkDestroySemaphore(m_Device->GetDevice(), m_PresentSignals[i], nullptr);
+            vkDestroySemaphore(m_Device->GetDevice(), m_ImageAvailableSemaphores[i], nullptr);
+            vkDestroyImageView(m_Device->GetDevice(), m_ImageViews[i], nullptr);
         }
 
-        for (auto& view : m_ImageViews) {
-            vkDestroyImageView(m_Device->GetDevice(), view, nullptr);
-        }
-
+        m_PresentSignals.clear();
         m_ImageAvailableSemaphores.clear();
         m_ImageViews.clear();
         m_Images.clear();
