@@ -86,8 +86,18 @@ namespace Kyber::Renderer::RHI {
             VK_CHECK(vkEndCommandBuffer(m_CommandBuffers[m_Device->GetCurrentFrameIndex()]));
         }
 
-        void Submit(const std::span<VkSemaphoreSubmitInfo>& wait, const std::span<VkSemaphoreSubmitInfo>& signal)
+        u64 Submit(const std::span<VkSemaphoreSubmitInfo>& wait, const std::span<VkSemaphoreSubmitInfo>& signal)
         {
+            std::vector<VkSemaphoreSubmitInfo> allSignal(signal.begin(), signal.end());
+            allSignal.push_back(VkSemaphoreSubmitInfo {
+                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+                .pNext = nullptr,
+                .semaphore = m_Device->GetTimeline<TQueue>(),
+                .value = m_Device->IncrementTimeline<TQueue>(),
+                .stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
+                .deviceIndex = 0
+            });
+
             VkCommandBufferSubmitInfo cmdSubmitInfo {
                 .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
                 .pNext = nullptr,
@@ -103,11 +113,12 @@ namespace Kyber::Renderer::RHI {
                 .pWaitSemaphoreInfos = wait.data(),
                 .commandBufferInfoCount = 1,
                 .pCommandBufferInfos = &cmdSubmitInfo,
-                .signalSemaphoreInfoCount = static_cast<u32>(signal.size()),
-                .pSignalSemaphoreInfos = signal.data()
+                .signalSemaphoreInfoCount = static_cast<u32>(allSignal.size()),
+                .pSignalSemaphoreInfos = allSignal.data()
             };
 
             VK_CHECK(vkQueueSubmit2(m_Device->GetQueue<TQueue>(), 1, &submitInfo, VK_NULL_HANDLE));
+            return m_Device->GetTimelineValue<TQueue>();
         }
 
         template <bool async = true>

@@ -120,11 +120,11 @@ namespace Kyber::Renderer::RHI {
         };
 
         m_ImageAvailableSemaphores.resize(m_ImageCount);
-        m_PresentSignals.resize(m_ImageCount);
+        m_PresentSemaphores.resize(m_ImageCount);
 
         for (u32 i = 0; i < m_ImageCount; ++i) {
             VK_CHECK(vkCreateSemaphore(m_Device->GetDevice(), &semaphoreInfo, nullptr, &m_ImageAvailableSemaphores[i]));
-            VK_CHECK(vkCreateSemaphore(m_Device->GetDevice(), &semaphoreInfo, nullptr, &m_PresentSignals[i]));
+            VK_CHECK(vkCreateSemaphore(m_Device->GetDevice(), &semaphoreInfo, nullptr, &m_PresentSemaphores[i]));
         }
     }
 
@@ -152,7 +152,7 @@ namespace Kyber::Renderer::RHI {
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .pNext = nullptr,
             .waitSemaphoreCount = 1,
-            .pWaitSemaphores = &m_PresentSignals[m_CurrentSyncIndex],
+            .pWaitSemaphores = &m_PresentSemaphores[m_CurrentSyncIndex],
             .swapchainCount = 1,
             .pSwapchains = &m_Swapchain,
             .pImageIndices = &m_CurrentImageIndex,
@@ -170,15 +170,39 @@ namespace Kyber::Renderer::RHI {
         return result;
     }
 
+    VkSemaphoreSubmitInfo Swapchain::GetAcquireWaitInfo() const
+    {
+        return VkSemaphoreSubmitInfo {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+            .pNext = nullptr,
+            .semaphore = m_ImageAvailableSemaphores[m_CurrentSyncIndex],
+            .value = 0,
+            .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .deviceIndex = 0
+        };
+    }
+
+    VkSemaphoreSubmitInfo Swapchain::GetPresentSignalInfo() const
+    {
+        return VkSemaphoreSubmitInfo {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+            .pNext = nullptr,
+            .semaphore = m_PresentSemaphores[m_CurrentSyncIndex],
+            .value = 0,
+            .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .deviceIndex = 0
+        };
+    }
+
     void Swapchain::Destroy()
     {
         for (u32 i = 0; i < m_ImageCount; ++i) {
-            vkDestroySemaphore(m_Device->GetDevice(), m_PresentSignals[i], nullptr);
+            vkDestroySemaphore(m_Device->GetDevice(), m_PresentSemaphores[i], nullptr);
             vkDestroySemaphore(m_Device->GetDevice(), m_ImageAvailableSemaphores[i], nullptr);
             vkDestroyImageView(m_Device->GetDevice(), m_ImageViews[i], nullptr);
         }
 
-        m_PresentSignals.clear();
+        m_PresentSemaphores.clear();
         m_ImageAvailableSemaphores.clear();
         m_ImageViews.clear();
         m_Images.clear();

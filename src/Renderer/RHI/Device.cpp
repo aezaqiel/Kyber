@@ -16,7 +16,9 @@ namespace Kyber::Renderer::RHI {
     {
         vkDeviceWaitIdle(m_Device);
 
-        vkDestroySemaphore(m_Device, m_FrameSemaphore, nullptr);
+        vkDestroySemaphore(m_Device, m_TransferTimeline, nullptr);
+        vkDestroySemaphore(m_Device, m_ComputeTimeline, nullptr);
+        vkDestroySemaphore(m_Device, m_GraphicsTimeline, nullptr);
 
         vmaDestroyAllocator(m_Allocator);
         vkDestroyDevice(m_Device, nullptr);
@@ -26,7 +28,7 @@ namespace Kyber::Renderer::RHI {
     {
         m_HostFrameIndex++;
 
-        vkGetSemaphoreCounterValue(m_Device, m_FrameSemaphore, &m_LocalFrameIndex);
+        vkGetSemaphoreCounterValue(m_Device, m_GraphicsTimeline, &m_LocalFrameIndex);
         if (m_HostFrameIndex > m_LocalFrameIndex + s_FrameInFlight) {
             u64 wait = m_HostFrameIndex - s_FrameInFlight;
             VkSemaphoreWaitInfo waitInfo {
@@ -34,7 +36,7 @@ namespace Kyber::Renderer::RHI {
                 .pNext = nullptr,
                 .flags = 0,
                 .semaphoreCount = 1,
-                .pSemaphores = &m_FrameSemaphore,
+                .pSemaphores = &m_GraphicsTimeline,
                 .pValues = &wait
             };
 
@@ -183,7 +185,9 @@ namespace Kyber::Renderer::RHI {
             .flags = 0
         };
 
-        VK_CHECK(vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_FrameSemaphore));
+        VK_CHECK(vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_GraphicsTimeline));
+        VK_CHECK(vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_ComputeTimeline));
+        VK_CHECK(vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_TransferTimeline));
     }
 
     // TODO: Currently only look for discrete gpu (need to check for feature support)

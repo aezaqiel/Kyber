@@ -121,33 +121,11 @@ namespace Kyber::Renderer {
         });
 
         std::vector<VkSemaphoreSubmitInfo> wait {
-            {
-                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-                .pNext = nullptr,
-                .semaphore = m_Swapchain->GetCurrentImageSemaphore(),
-                .value = 0,
-                .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                .deviceIndex = 0
-            }
+            m_Swapchain->GetAcquireWaitInfo()
         };
 
         std::vector<VkSemaphoreSubmitInfo> signal {
-            {
-                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-                .pNext = nullptr,
-                .semaphore = m_Device->GetFrameSemaphore(),
-                .value = m_Device->GetHostIndex(),
-                .stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
-                .deviceIndex = 0
-            },
-            {
-                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-                .pNext = nullptr,
-                .semaphore = m_Swapchain->GetPresentSignalSemaphore(),
-                .value = 0,
-                .stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
-                .deviceIndex = 0
-            }
+            m_Swapchain->GetPresentSignalInfo()
         };
 
         m_GraphicsCommand->Submit(wait, signal);
@@ -172,9 +150,7 @@ namespace Kyber::Renderer {
 
     void Renderer::RecreateSwapchain()
     {
-        LOG_INFO("Swapchain recreate ({}, {})", m_Width, m_Height);
-
-        m_Device->WaitIdle();
+        vkQueueWaitIdle(m_Device->GetQueue<RHI::QueueType::Graphics>());
         m_Swapchain->Create(m_Width, m_Height);
     }
 

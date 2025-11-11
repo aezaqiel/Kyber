@@ -35,7 +35,7 @@ namespace Kyber::Renderer::RHI {
 
         inline VkSemaphore GetPresentSignalSemaphore() const
         {
-            return m_PresentSignals[m_CurrentSyncIndex];
+            return m_PresentSemaphores[m_CurrentSyncIndex];
         }
 
         inline u32 GetCurrentImageIndex() const { return m_CurrentImageIndex; }
@@ -44,6 +44,9 @@ namespace Kyber::Renderer::RHI {
 
         std::optional<VkResult> AcquireNextImage();
         std::optional<VkResult> Present();
+
+        VkSemaphoreSubmitInfo GetAcquireWaitInfo() const;
+        VkSemaphoreSubmitInfo GetPresentSignalInfo() const;
 
     private:
         void Destroy();
@@ -65,7 +68,7 @@ namespace Kyber::Renderer::RHI {
         std::vector<VkImageView> m_ImageViews;
 
         std::vector<VkSemaphore> m_ImageAvailableSemaphores;
-        std::vector<VkSemaphore> m_PresentSignals;
+        std::vector<VkSemaphore> m_PresentSemaphores;
 
         u32 m_CurrentImageIndex = 0;
         u32 m_CurrentSyncIndex = 0;

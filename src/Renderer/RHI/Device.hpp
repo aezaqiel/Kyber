@@ -25,12 +25,14 @@ namespace Kyber::Renderer::RHI {
         inline VkPhysicalDevice GetPhysicalDevice() const { return m_PhysicalDevice; }
         inline VkDevice GetDevice() const { return m_Device; }
 
+        inline void WaitIdle() const { vkDeviceWaitIdle(m_Device); }
+
+        inline u32 GetCurrentFrameIndex() const { return m_CurrentFrameIndex; }
+
         template <QueueType type = QueueType::Graphics>
         inline constexpr VkQueue GetQueue() const
         {
-            if constexpr (type == QueueType::Graphics) {
-                return m_GraphicsQueue;
-            } else if constexpr (type == QueueType::Compute) {
+            if constexpr (type == QueueType::Compute) {
                 return m_ComputeQueue;
             } else if constexpr (type == QueueType::Transfer) {
                 return m_TransferQueue;
@@ -42,9 +44,7 @@ namespace Kyber::Renderer::RHI {
         template <QueueType type = QueueType::Graphics>
         inline constexpr u32 GetQueueFamily() const
         {
-            if constexpr (type == QueueType::Graphics) {
-                return m_QueueFamily.graphics.value();
-            } else if constexpr (type == QueueType::Compute) {
+            if constexpr (type == QueueType::Compute) {
                 return m_QueueFamily.compute.value();
             } else if constexpr (type == QueueType::Transfer) {
                 return m_QueueFamily.transfer.value();
@@ -53,17 +53,45 @@ namespace Kyber::Renderer::RHI {
             return m_QueueFamily.graphics.value();
         }
 
-        inline std::set<u32> GetQueueFamilies() const
+        template <QueueType type = QueueType::Graphics>
+        inline VkSemaphore GetTimeline()
         {
-            return m_QueueFamily.UniqueFamilies();
+            if constexpr (type == QueueType::Compute) {
+                return m_ComputeTimeline;
+            } else if constexpr (type == QueueType::Transfer) {
+                return m_TransferTimeline;
+            }
+
+            return m_GraphicsTimeline;
         }
 
-        inline void WaitIdle() const { vkDeviceWaitIdle(m_Device); }
+        template <QueueType type = QueueType::Graphics>
+        inline u64 GetTimelineValue()
+        {
+            if constexpr (type == QueueType::Compute) {
+                return m_ComputeTimelineValue.load();
+            } else if constexpr (type == QueueType::Transfer) {
+                return m_TransferTimelineValue.load();
+            }
 
-        inline VkSemaphore GetFrameSemaphore() const { return m_FrameSemaphore; }
-        inline u64 GetHostIndex() const { return m_HostFrameIndex; }
+            return m_GraphicsTimelineValue.load();
+        }
 
-        inline u32 GetCurrentFrameIndex() const { return m_CurrentFrameIndex; }
+        template <QueueType type = QueueType::Graphics>
+        inline u64 IncrementTimeline()
+        {
+            if constexpr (type == QueueType::Compute) {
+                m_ComputeTimelineValue.fetch_add(1);
+                return m_ComputeTimelineValue.load();
+            } else if constexpr (type == QueueType::Transfer) {
+                m_TransferTimelineValue.fetch_add(1);
+                return m_TransferTimelineValue.load();
+            }
+
+            m_GraphicsTimelineValue.fetch_add(1);
+            return m_GraphicsTimelineValue.load();
+        }
+
         inline static constexpr u32 GetFrameInFlight() { return s_FrameInFlight; }
 
     private:
@@ -116,7 +144,14 @@ namespace Kyber::Renderer::RHI {
 
         u32 m_CurrentFrameIndex = 0;
 
-        VkSemaphore m_FrameSemaphore = VK_NULL_HANDLE;
+        VkSemaphore m_GraphicsTimeline = VK_NULL_HANDLE;
+        VkSemaphore m_ComputeTimeline = VK_NULL_HANDLE;
+        VkSemaphore m_TransferTimeline = VK_NULL_HANDLE;
+
+        std::atomic<u64> m_GraphicsTimelineValue = 0;
+        std::atomic<u64> m_ComputeTimelineValue = 0;
+        std::atomic<u64> m_TransferTimelineValue = 0;
+
         u64 m_HostFrameIndex = 0;
         u64 m_LocalFrameIndex = 0;
     };
