@@ -1,10 +1,14 @@
 #pragma once
 
-#include "RenderData.hpp"
-
 #include "Core/Events.hpp"
 #include "Scene/SceneData.hpp"
 #include "DSA/MPMCQueue.hpp"
+
+#include "RenderData.hpp"
+#include "RHI/Instance.hpp"
+#include "RHI/Device.hpp"
+#include "RHI/Swapchain.hpp"
+#include "RHI/CommandManager.hpp"
 
 namespace Kyber::Core {
 
@@ -13,14 +17,6 @@ namespace Kyber::Core {
 }
 
 namespace Kyber::Renderer {
-
-    namespace RHI {
-
-        class Instance;
-        class Device;
-        class Swapchain;
-    
-    }
 
     class Renderer
     {
@@ -64,10 +60,11 @@ namespace Kyber::Renderer {
 
         std::shared_ptr<RHI::Instance> m_Instance;
         std::shared_ptr<RHI::Device> m_Device;
-        std::unique_ptr<RHI::Swapchain> m_Swapchain;
+        std::shared_ptr<RHI::Swapchain> m_Swapchain;
 
-    private:
-        inline static constexpr usize s_FrameInFlight = 3;
+        std::unique_ptr<RHI::CommandManager<RHI::QueueType::Graphics>> m_GraphicsCommand;
+        std::unique_ptr<RHI::CommandManager<RHI::QueueType::Compute>> m_ComputeCommand;
+        std::unique_ptr<RHI::CommandManager<RHI::QueueType::Transfer>> m_TransferCommand;
     };
 
 }

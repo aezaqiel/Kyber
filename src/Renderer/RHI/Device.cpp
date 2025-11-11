@@ -9,13 +9,38 @@ namespace Kyber::Renderer::RHI {
     {
         SelectPhysicalDevice();
         CreateDevice();
+        CreateSyncPrimitive();
     }
 
     Device::~Device()
     {
         vkDeviceWaitIdle(m_Device);
+
+        vkDestroySemaphore(m_Device, m_FrameSemaphore, nullptr);
+
         vmaDestroyAllocator(m_Allocator);
         vkDestroyDevice(m_Device, nullptr);
+    }
+
+    void Device::SyncFrame()
+    {
+        m_HostFrameIndex++;
+        vkGetSemaphoreCounterValue(m_Device, m_FrameSemaphore, &m_LocalFrameIndex);
+        if (m_HostFrameIndex > m_LocalFrameIndex + s_FrameInFlight) {
+            u64 wait = m_HostFrameIndex - s_FrameInFlight;
+            VkSemaphoreWaitInfo waitInfo {
+                .sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
+                .pNext = nullptr,
+                .flags = 0,
+                .semaphoreCount = 1,
+                .pSemaphores = &m_FrameSemaphore,
+                .pValues = &wait
+            };
+
+            VK_CHECK(vkWaitSemaphores(m_Device, &waitInfo, std::numeric_limits<u64>::max()));
+        }
+
+        m_CurrentFrameIndex = m_HostFrameIndex % s_FrameInFlight;
     }
 
     void Device::SelectPhysicalDevice()
@@ -43,19 +68,15 @@ namespace Kyber::Renderer::RHI {
 
             vkGetPhysicalDeviceProperties2(m_PhysicalDevice, &m_Props);
             LOG_INFO("Physical device: {}", m_Props.properties.deviceName);
-            LOG_INFO("Graphics queue family: {}", GetGraphicsQueueFamily());
-            LOG_INFO("Compute queue family: {}", GetComputeQueueFamily());
-            LOG_INFO("Transfer queue family: {}", GetTransferQueueFamily());
+            LOG_INFO("Graphics queue family: {}", GetQueueFamily<QueueType::Graphics>());
+            LOG_INFO("Compute queue family: {}", GetQueueFamily<QueueType::Compute>());
+            LOG_INFO("Transfer queue family: {}", GetQueueFamily<QueueType::Transfer>());
         }
     }
 
     void Device::CreateDevice()
     {
-        std::set<u32> uniqueFamily {
-            GetGraphicsQueueFamily(),
-            GetComputeQueueFamily(),
-            GetTransferQueueFamily()
-        };
+        auto uniqueFamily = m_QueueFamily.UniqueFamilies();
 
         std::vector<VkDeviceQueueCreateInfo> queueInfos;
         queueInfos.reserve(uniqueFamily.size());
@@ -76,9 +97,15 @@ namespace Kyber::Renderer::RHI {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
 
+        VkPhysicalDeviceSwapchainMaintenance1FeaturesKHR swapchain1 {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_KHR,
+            .pNext = nullptr,
+            .swapchainMaintenance1 = VK_TRUE
+        };
+
         VkPhysicalDeviceDynamicRenderingFeatures dynamicRendering {
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
-            .pNext = nullptr,
+            .pNext = &swapchain1,
             .dynamicRendering = VK_TRUE
         };
 
@@ -135,12 +162,30 @@ namespace Kyber::Renderer::RHI {
 
         VK_CHECK(vmaCreateAllocator(&allocatorInfo, &m_Allocator));
 
-        vkGetDeviceQueue(m_Device, GetGraphicsQueueFamily(), 0, &m_GraphicsQueue);
-        vkGetDeviceQueue(m_Device, GetComputeQueueFamily(), 0, &m_ComputeQueue);
-        vkGetDeviceQueue(m_Device, GetTransferQueueFamily(), 0, &m_TransferQueue);
+        vkGetDeviceQueue(m_Device, GetQueueFamily<QueueType::Graphics>(), 0, &m_GraphicsQueue);
+        vkGetDeviceQueue(m_Device, GetQueueFamily<QueueType::Compute>(), 0, &m_ComputeQueue);
+        vkGetDeviceQueue(m_Device, GetQueueFamily<QueueType::Transfer>(), 0, &m_TransferQueue);
     }
 
-    // TODO: Currently only look for discrete gpu
+    void Device::CreateSyncPrimitive()
+    {
+        VkSemaphoreTypeCreateInfo typeInfo {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+            .pNext = nullptr,
+            .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
+            .initialValue = 0
+        };
+
+        VkSemaphoreCreateInfo semaphoreInfo {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+            .pNext = &typeInfo,
+            .flags = 0
+        };
+
+        VK_CHECK(vkCreateSemaphore(m_Device, &semaphoreInfo, nullptr, &m_FrameSemaphore));
+    }
+
+    // TODO: Currently only look for discrete gpu (need to check for feature support)
     i32 Device::ScorePhysicalDevice(VkPhysicalDevice device, VkSurfaceKHR surface)
     {
         QueueFamilyIndices indices = FindQueueFamilyIndices(device, surface);

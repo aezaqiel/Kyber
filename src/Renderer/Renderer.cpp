@@ -2,10 +2,6 @@
 
 #include "Core/Window.hpp"
 
-#include "RHI/Instance.hpp"
-#include "RHI/Device.hpp"
-#include "RHI/Swapchain.hpp"
-
 namespace Kyber::Renderer {
 
     Renderer::Renderer(const std::shared_ptr<Core::Window>& window)
@@ -17,8 +13,13 @@ namespace Kyber::Renderer {
 
         m_Instance = std::make_shared<RHI::Instance>(window);
         m_Device = std::make_shared<RHI::Device>(m_Instance);
-        m_Swapchain = std::make_unique<RHI::Swapchain>(m_Instance, m_Device);
+
+        m_Swapchain = std::make_shared<RHI::Swapchain>(m_Instance, m_Device);
         m_Swapchain->Create(window->GetWidth(), window->GetHeight());
+
+        m_GraphicsCommand = std::make_unique<RHI::CommandManager<RHI::QueueType::Graphics>>(m_Device);
+        m_ComputeCommand = std::make_unique<RHI::CommandManager<RHI::QueueType::Compute>>(m_Device);
+        m_TransferCommand = std::make_unique<RHI::CommandManager<RHI::QueueType::Transfer>>(m_Device);
     }
 
     Renderer::~Renderer()
@@ -82,6 +83,70 @@ namespace Kyber::Renderer {
 
     void Renderer::DrawFrame()
     {
+        m_Device->SyncFrame();
+
+        if (m_Swapchain->AcquireNextImage()) {
+            RecreateSwapchain();
+            return;
+        }
+
+        m_GraphicsCommand->Record([&](VkCommandBuffer cmd) {
+            VkImageMemoryBarrier barrier {
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                .pNext = nullptr,
+                .srcAccessMask = VK_ACCESS_NONE,
+                .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
+                .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+                .image = m_Swapchain->GetCurrentImage(),
+                .subresourceRange = {
+                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .baseMipLevel = 0,
+                    .levelCount = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount = 1
+                }
+            };
+
+            vkCmdPipelineBarrier(cmd,
+                VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT,
+                VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier
+            );
+        });
+
+        std::vector<VkSemaphoreSubmitInfo> wait;
+        std::vector<VkSemaphoreSubmitInfo> signal;
+
+        wait.push_back(VkSemaphoreSubmitInfo {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+            .pNext = nullptr,
+            .semaphore = m_Swapchain->GetCurrentImageSemaphore(),
+            .value = 0,
+            .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .deviceIndex = 0
+        });
+
+        signal.push_back(VkSemaphoreSubmitInfo {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+            .pNext = nullptr,
+            .semaphore = m_Device->GetFrameSemaphore(),
+            .value = m_Device->GetHostIndex(),
+            .stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
+            .deviceIndex = 0
+        });
+
+        m_GraphicsCommand->Submit(wait, signal);
+
+        if (m_Swapchain->Present(m_Device->GetHostIndex())) {
+            RecreateSwapchain();
+            return;
+        }
     }
 
     void Renderer::Submit(RenderCommand&& cmd)
@@ -98,7 +163,6 @@ namespace Kyber::Renderer {
 
     void Renderer::RecreateSwapchain()
     {
-        LOG_INFO("Renderer resized ({}, {})", m_Width, m_Height);
         m_Swapchain->Create(m_Width, m_Height);
     }
 

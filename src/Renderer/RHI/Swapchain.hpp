@@ -37,8 +37,8 @@ namespace Kyber::Renderer::RHI {
 
         void Create(u32 width, u32 height);
 
-        VkResult AcquireNextImage();
-        VkResult Present(u64 waitValue);
+        std::optional<VkResult> AcquireNextImage();
+        std::optional<VkResult> Present(u64 waitValue);
 
     private:
         void Destroy();

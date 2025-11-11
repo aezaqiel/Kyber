@@ -123,11 +123,9 @@ namespace Kyber::Renderer::RHI {
         for (auto& semaphore : m_ImageAvailableSemaphores) {
             VK_CHECK(vkCreateSemaphore(m_Device->GetDevice(), &semaphoreInfo, nullptr, &semaphore));
         }
-
-        LOG_INFO("Swapchain created ({}, {}), with {} images", m_Extent.width, m_Extent.height, m_ImageCount);
     }
 
-    VkResult Swapchain::AcquireNextImage()
+    std::optional<VkResult> Swapchain::AcquireNextImage()
     {
         VkResult result = vkAcquireNextImageKHR(
             m_Device->GetDevice(),
@@ -138,27 +136,49 @@ namespace Kyber::Renderer::RHI {
             &m_CurrentImageIndex
         );
 
-#ifndef NDEBUG
-        if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR && result != VK_ERROR_OUT_OF_DATE_KHR) {
-            VK_CHECK(result);
+        if (result == VK_SUCCESS) {
+            return std::nullopt;
         }
-#endif
 
         return result;
     }
 
-    VkResult Swapchain::Present(u64 waitValue)
+    std::optional<VkResult> Swapchain::Present(u64 waitValue)
     {
-        VkTimelineSemaphoreSubmitInfo timelineInfo {
-            .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+        auto semaphore = m_Device->GetFrameSemaphore();
+        auto wait = m_Device->GetHostIndex();
+
+        VkSemaphoreWaitInfo waitInfo {
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
             .pNext = nullptr,
-            .waitSemaphoreValueCount = 1,
-            .pWaitSemaphoreValues = &waitValue,
-            .signalSemaphoreValueCount = 0,
-            .pSignalSemaphoreValues = nullptr
+            .flags = 0,
+            .semaphoreCount = 1,
+            .pSemaphores = &semaphore,
+            .pValues = &wait
         };
 
-        return VK_ERROR_UNKNOWN;
+        vkWaitSemaphores(m_Device->GetDevice(), &waitInfo, std::numeric_limits<u64>::max());
+
+        VkPresentInfoKHR presentInfo {
+            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .pNext = nullptr,
+            .waitSemaphoreCount = 0,
+            .pWaitSemaphores = nullptr,
+            .swapchainCount = 1,
+            .pSwapchains = &m_Swapchain,
+            .pImageIndices = &m_CurrentImageIndex,
+            .pResults = nullptr
+        };
+
+        VkResult result = vkQueuePresentKHR(m_Device->GetQueue<QueueType::Graphics>(), &presentInfo);
+
+        m_CurrentSyncIndex = (m_CurrentSyncIndex + 1) % m_ImageCount;
+
+        if (result == VK_SUCCESS) {
+            return std::nullopt;
+        }
+
+        return result;
     }
 
     void Swapchain::Destroy()
