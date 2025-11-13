@@ -26,6 +26,7 @@ namespace Kyber::Renderer {
     {
         if (m_RenderThread.joinable()) {
             m_StopSource.request_stop();
+            m_RenderThread.join();
         }
     }
 
@@ -75,7 +76,7 @@ namespace Kyber::Renderer {
             m_CurrentSample++;
         }
 
-        LOG_INFO("Renderer stop requested, waiting for device");
+        LOG_INFO("Renderer shutdown requested, syncing with GPU");
         m_Device->WaitIdle();
 
         LOG_INFO("Render thread shutdown");
@@ -150,7 +151,7 @@ namespace Kyber::Renderer {
 
     void Renderer::RecreateSwapchain()
     {
-        vkQueueWaitIdle(m_Device->GetQueue<RHI::QueueType::Graphics>());
+        m_Device->WaitIdle();
         m_Swapchain->Create(m_Width, m_Height);
     }
 
