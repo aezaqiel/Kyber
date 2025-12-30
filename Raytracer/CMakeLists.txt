@@ -1,6 +1,5 @@
 
 add_executable(Raytracer
-    src/Main.cpp
     src/Raytracer.hpp
     src/Raytracer.cpp
     src/RTLayer.hpp

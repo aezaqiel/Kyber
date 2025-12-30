@@ -14,3 +14,8 @@ namespace Raytracer {
     }
     
 }
+
+Kyber::Application* Kyber::CreateApplication()
+{
+    return new Raytracer::Raytracer();
+}
