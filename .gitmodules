@@ -1,3 +1,9 @@
 [submodule "Kyber/thirdparty/spdlog"]
 	path = Kyber/thirdparty/spdlog
 	url = https://github.com/aezaqiel/spdlog
+[submodule "Kyber/thirdparty/glfw"]
+	path = Kyber/thirdparty/glfw
+	url = https://github.com/aezaqiel/glfw
+[submodule "Kyber/thirdparty/glad"]
+	path = Kyber/thirdparty/glad
+	url = https://github.com/aezaqiel/glad

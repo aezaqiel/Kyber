@@ -1,4 +1,6 @@
 add_subdirectory(thirdparty/spdlog)
+add_subdirectory(thirdparty/glfw)
+add_subdirectory(thirdparty/glad)
 
 add_library(Kyber STATIC
     src/Kyber/Kyber.hpp
@@ -24,6 +26,8 @@ PRIVATE
 target_link_libraries(Kyber
 PUBLIC
     spdlog
+    glfw
+    glad
 )
 
 target_precompile_headers(Kyber
@@ -34,7 +38,15 @@ PUBLIC
 target_compile_definitions(Kyber
 PUBLIC
     NOMINMAX
+    GLFW_INCLUDE_NONE
 )
+
+if(WIN32)
+    target_compile_definitions(Kyber
+    PUBLIC
+        GLFW_EXPOSE_NATIVE_WIN32
+    )
+endif()
 
 file(TO_CMAKE_PATH ${CMAKE_CURRENT_BINARY_DIR}/log LOG_FOLDER)
 
