@@ -7,3 +7,6 @@
 [submodule "Kyber/thirdparty/glad"]
 	path = Kyber/thirdparty/glad
 	url = https://github.com/aezaqiel/glad
+[submodule "Kyber/thirdparty/imgui"]
+	path = Kyber/thirdparty/imgui
+	url = https://github.com/aezaqiel/imgui

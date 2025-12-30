@@ -1,6 +1,7 @@
 add_subdirectory(thirdparty/spdlog)
 add_subdirectory(thirdparty/glfw)
 add_subdirectory(thirdparty/glad)
+add_subdirectory(thirdparty/imgui)
 
 add_library(Kyber STATIC
     src/Kyber/Kyber.hpp
@@ -35,6 +36,7 @@ PUBLIC
     spdlog
     glfw
     glad
+    imgui
 )
 
 target_precompile_headers(Kyber
