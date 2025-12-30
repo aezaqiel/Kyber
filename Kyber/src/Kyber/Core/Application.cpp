@@ -1,5 +1,7 @@
 #include "Application.hpp"
 
+#include "Input.hpp"
+
 namespace Kyber {
 
     Application::Application()
@@ -17,9 +19,16 @@ namespace Kyber {
         while (m_Running) {
             Window::PollEvents();
 
+            // TEMPORARY
+            if (Input::IsKeyDown(KeyCode::Escape)) {
+                m_Running = false;
+            }
+
             if (!m_Minimized) {
                 m_Window->SwapBuffers();
             }
+
+            Input::Update();
         }
     }
 
@@ -36,6 +45,8 @@ namespace Kyber {
             m_Minimized = e.minimized;
             return false;
         });
+
+        Input::OnEvent(dispatcher);
     }
 
 }

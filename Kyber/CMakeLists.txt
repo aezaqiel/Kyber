@@ -16,6 +16,8 @@ add_library(Kyber STATIC
     src/Kyber/Core/Events.hpp
     src/Kyber/Core/Window.hpp
     src/Kyber/Core/Window.cpp
+    src/Kyber/Core/Input.hpp
+    src/Kyber/Core/Input.cpp
 )
 
 target_include_directories(Kyber
