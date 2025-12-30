@@ -1,0 +1,3 @@
+[submodule "Kyber/thirdparty/spdlog"]
+	path = Kyber/thirdparty/spdlog
+	url = https://github.com/aezaqiel/spdlog

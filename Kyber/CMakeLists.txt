@@ -1,3 +1,4 @@
+add_subdirectory(thirdparty/spdlog)
 
 add_library(Kyber STATIC
     src/Kyber/Kyber.hpp
@@ -16,6 +17,7 @@ PUBLIC
 
 target_link_libraries(Kyber
 PUBLIC
+    spdlog
 )
 
 target_precompile_headers(Kyber
