@@ -123,3 +123,4 @@
 // User headers
 
 #include "Kyber/Core/Types.hpp"
+#include "Kyber/Core/Logger.hpp"

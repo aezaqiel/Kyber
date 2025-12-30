@@ -12,7 +12,7 @@ namespace Kyber {
 
     auto Application::Run() -> void
     {
-        std::println("Running...");
+        KINFO("Running...");
     }
 
 }
