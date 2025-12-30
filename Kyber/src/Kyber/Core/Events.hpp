@@ -126,11 +126,6 @@ namespace Kyber {
     {
         KeyCode keycode;
 
-        virtual constexpr auto GetType() const -> EventType override
-        {
-            return GetStaticType();
-        }
-
         virtual constexpr auto GetEventCategory() const -> i32 override
         {
             return EventCategory::EventCategoryInput | EventCategory::EventCategoryKeyboard;
@@ -156,6 +151,11 @@ namespace Kyber {
         {
             return EventType::KeyPressed;
         }
+
+        virtual constexpr auto GetType() const -> EventType override
+        {
+            return GetStaticType();
+        }
     };
 
     struct KeyReleasedEvent final : public KeyEvent
@@ -168,6 +168,11 @@ namespace Kyber {
         inline static constexpr auto GetStaticType() -> EventType
         {
             return EventType::KeyReleased;
+        }
+
+        virtual constexpr auto GetType() const -> EventType override
+        {
+            return GetStaticType();
         }
     };
 
@@ -200,11 +205,6 @@ namespace Kyber {
     {
         MouseButton button;
 
-        virtual constexpr auto GetType() const -> EventType override
-        {
-            return GetStaticType();
-        }
-
         virtual constexpr auto GetEventCategory() const -> i32 override
         {
             return EventCategory::EventCategoryInput | EventCategory::EventCategoryMouseButton;
@@ -228,6 +228,11 @@ namespace Kyber {
         {
             return EventType::MouseButtonPressed;
         }
+
+        virtual constexpr auto GetType() const -> EventType override
+        {
+            return GetStaticType();
+        }
     };
 
     struct MouseButtonReleasedEvent final : public MouseButtonEvent
@@ -241,17 +246,17 @@ namespace Kyber {
         {
             return EventType::MouseButtonReleased;
         }
+
+        virtual constexpr auto GetType() const -> EventType override
+        {
+            return GetStaticType();
+        }
     };
 
     struct MouseEvent : public Event
     {
         f32 x;
         f32 y;
-
-        virtual constexpr auto GetType() const -> EventType override
-        {
-            return GetStaticType();
-        }
 
         virtual constexpr auto GetEventCategory() const -> i32 override
         {
@@ -276,6 +281,11 @@ namespace Kyber {
         {
             return EventType::MouseMoved;
         }
+
+        virtual constexpr auto GetType() const -> EventType override
+        {
+            return GetStaticType();
+        }
     };
 
     struct MouseScrolledEvent final : public MouseEvent
@@ -288,6 +298,11 @@ namespace Kyber {
         inline static constexpr auto GetStaticType() -> EventType
         {
             return EventType::MouseScrolled;
+        }
+
+        virtual constexpr auto GetType() const -> EventType override
+        {
+            return GetStaticType();
         }
     };
 
