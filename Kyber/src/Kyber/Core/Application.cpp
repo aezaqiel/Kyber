@@ -24,6 +24,11 @@ namespace Kyber {
                 m_Running = false;
             }
 
+            // TODO: delta time
+            for (auto& layer : m_LayerStack) {
+                layer->OnUpdate(0.0f);
+            }
+
             if (!m_Minimized) {
                 m_Window->SwapBuffers();
             }
@@ -47,6 +52,11 @@ namespace Kyber {
         });
 
         Input::OnEvent(dispatcher);
+
+        for (auto& layer : m_LayerStack | std::ranges::views::reverse) {
+            if (event.handled) break;
+            layer->OnEvent(dispatcher);
+        }
     }
 
 }

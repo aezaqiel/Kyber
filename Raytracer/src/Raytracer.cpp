@@ -1,15 +1,16 @@
 #include "Raytracer.hpp"
 
+#include "RTLayer.hpp"
+
 namespace Raytracer {
 
     Raytracer::Raytracer()
     {
-        KDEBUG("Raytracer initialized");
+        CreateLayer<RTLayer>();
     }
 
     Raytracer::~Raytracer()
     {
-        KDEBUG("Raytracer destroyed");
     }
     
 }

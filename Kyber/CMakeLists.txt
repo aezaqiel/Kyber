@@ -18,6 +18,9 @@ add_library(Kyber STATIC
     src/Kyber/Core/Window.cpp
     src/Kyber/Core/Input.hpp
     src/Kyber/Core/Input.cpp
+    src/Kyber/Core/Layer.hpp
+    src/Kyber/Core/LayerStack.hpp
+    src/Kyber/Core/LayerStack.cpp
 )
 
 target_include_directories(Kyber

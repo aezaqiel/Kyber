@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Window.hpp"
+#include "LayerStack.hpp"
 
 namespace Kyber {
 
@@ -12,6 +13,36 @@ namespace Kyber {
 
         auto Run() -> void;
 
+        template <IsLayer TLayer>
+        auto PushLayer(const std::shared_ptr<TLayer>& layer) -> void
+        {
+            m_LayerStack.PushLayer(layer);
+        }
+
+        template <IsLayer TLayer>
+        auto PushOverlay(const std::shared_ptr<TLayer>& overlay) -> void
+        {
+            m_LayerStack.PushOverlay(overlay);
+        }
+
+        template <IsLayer TLayer, typename... Args>
+            requires std::is_constructible_v<TLayer, Args...>
+        auto CreateLayer(Args&&... args) -> std::shared_ptr<TLayer>
+        {
+            auto layer = std::make_shared<TLayer>(std::forward<Args>(args)...);
+            m_LayerStack.PushLayer(layer);
+            return layer;
+        }
+
+        template <IsLayer TLayer, typename... Args>
+            requires std::is_constructible_v<TLayer, Args...>
+        auto CreateOverlay(Args&&... args) -> std::shared_ptr<TLayer>
+        {
+            auto overlay = std::make_shared<TLayer>(std::forward<Args>(args)...);
+            m_LayerStack.PushOverlay(overlay);
+            return overlay;
+        }
+
     private:
         auto DispatchEvents(const Event& event) -> void;
 
@@ -20,6 +51,8 @@ namespace Kyber {
         bool m_Minimized { false };
 
         std::unique_ptr<Window> m_Window;
+
+        LayerStack m_LayerStack;
     };
 
     Application* CreateApplication();
