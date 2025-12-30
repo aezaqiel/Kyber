@@ -10,6 +10,8 @@ add_library(Kyber STATIC
     src/Kyber/Core/Application.cpp
     src/Kyber/Core/Logger.hpp
     src/Kyber/Core/Logger.cpp
+    src/Kyber/Core/KeyCodes.hpp
+    src/Kyber/Core/Events.hpp
 )
 
 target_include_directories(Kyber
