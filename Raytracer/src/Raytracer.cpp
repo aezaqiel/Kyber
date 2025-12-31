@@ -2,7 +2,7 @@
 
 #include "RTLayer.hpp"
 
-namespace Raytracer {
+namespace Kyber {
 
     Raytracer::Raytracer()
     {
@@ -17,5 +17,5 @@ namespace Raytracer {
 
 Kyber::Application* Kyber::CreateApplication()
 {
-    return new Raytracer::Raytracer();
+    return new Kyber::Raytracer();
 }

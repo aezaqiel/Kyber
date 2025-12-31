@@ -1,5 +1,8 @@
 #include "Application.hpp"
 
+#include <glad/gl.h>
+#include <imgui.h>
+
 #include "Input.hpp"
 
 namespace Kyber {
@@ -32,6 +35,9 @@ namespace Kyber {
             }
 
             if (!m_Minimized) {
+                glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
                 m_ImGuiLayer->Begin();
                 for (auto& layer : m_LayerStack) {
                     layer->OnImGuiRender();

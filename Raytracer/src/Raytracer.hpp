@@ -2,9 +2,9 @@
 
 #include <Kyber/Kyber.hpp>
 
-namespace Raytracer {
+namespace Kyber {
 
-    class Raytracer final : public Kyber::Application
+    class Raytracer final : public Application
     {
     public:
         Raytracer();
