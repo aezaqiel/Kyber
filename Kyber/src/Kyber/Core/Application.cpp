@@ -6,8 +6,10 @@ namespace Kyber {
 
     Application::Application()
     {
-        m_Window = std::make_unique<Window>(1280, 720, "Kyber");
+        m_Window = std::make_shared<Window>(1280, 720, "Kyber");
         m_Window->BindEventCallback(BIND_EVENT_FN(Application::DispatchEvents));
+
+        m_ImGuiLayer = CreateOverlay<ImGuiLayer>(m_Window);
     }
 
     Application::~Application()
@@ -30,6 +32,12 @@ namespace Kyber {
             }
 
             if (!m_Minimized) {
+                m_ImGuiLayer->Begin();
+                for (auto& layer : m_LayerStack) {
+                    layer->OnImGuiRender();
+                }
+                m_ImGuiLayer->End();
+
                 m_Window->SwapBuffers();
             }
 

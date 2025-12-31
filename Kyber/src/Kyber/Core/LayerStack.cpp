@@ -13,11 +13,14 @@ namespace Kyber {
     {
         m_Layers.insert(m_Layers.begin() + m_LayerInsertIndex, layer);
         m_LayerInsertIndex++;
+
+        layer->OnAttach();
     }
 
     auto LayerStack::PushOverlay(const std::shared_ptr<Layer>& overlay) -> void
     {
         m_Layers.push_back(overlay);
+        overlay->OnAttach();
     }
 
     auto LayerStack::PopLayer(const std::shared_ptr<Layer>& layer) -> void

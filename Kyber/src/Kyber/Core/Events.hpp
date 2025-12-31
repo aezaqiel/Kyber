@@ -305,14 +305,16 @@ namespace Kyber {
             return GetStaticType();
         }
     };
+    
+    template <typename T>
+    concept IsEvent = std::is_base_of_v<Event, T>;
 
     template <typename TFn, typename TEvent>
-    concept EventHandler =
-        std::is_base_of_v<Event, TEvent> &&
-        requires (TFn fn, const TEvent& event) {
-            { TEvent::GetStaticType() } -> std::same_as<EventType>;
-            { std::invoke(std::forward<TFn>(fn), event) } -> std::same_as<bool>;
-        };
+    concept EventHandler = requires (TFn fn, const TEvent& event)
+    {
+        { TEvent::GetStaticType() } -> std::same_as<EventType>;
+        { std::invoke(std::forward<TFn>(fn), event) } -> std::same_as<bool>;
+    };
 
     class EventDispatcher
     {
@@ -322,12 +324,20 @@ namespace Kyber {
         {
         }
 
-        template <typename T, EventHandler<T> Fn>
+        template <IsEvent T, EventHandler<T> Fn>
         auto Dispatch(Fn&& fn) const noexcept -> void
         {
             if (m_Event.handled) return;
             if (m_Event.GetType() == T::GetStaticType()) {
                 m_Event.handled |= std::invoke(std::forward<Fn>(fn), static_cast<const T&>(m_Event));
+            }
+        }
+
+        template <IsEvent T>
+        auto Block() const noexcept -> void
+        {
+            if (m_Event.GetType() == T::GetStaticType()) {
+                m_Event.handled = true;
             }
         }
 

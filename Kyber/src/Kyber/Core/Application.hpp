@@ -3,6 +3,8 @@
 #include "Window.hpp"
 #include "LayerStack.hpp"
 
+#include "Kyber/ImGui/ImGuiLayer.hpp"
+
 namespace Kyber {
 
     class Application
@@ -50,9 +52,10 @@ namespace Kyber {
         bool m_Running { true };
         bool m_Minimized { false };
 
-        std::unique_ptr<Window> m_Window;
-
         LayerStack m_LayerStack;
+
+        std::shared_ptr<Window> m_Window;
+        std::shared_ptr<ImGuiLayer> m_ImGuiLayer;
     };
 
     Application* CreateApplication();

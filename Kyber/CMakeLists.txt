@@ -22,6 +22,11 @@ add_library(Kyber STATIC
     src/Kyber/Core/Layer.hpp
     src/Kyber/Core/LayerStack.hpp
     src/Kyber/Core/LayerStack.cpp
+
+    src/Kyber/ImGui/ImGuiLayer.hpp
+    src/Kyber/ImGui/ImGuiLayer.cpp
+    
+    src/Platform/ImGui/ImGuiImpl.cpp
 )
 
 target_include_directories(Kyber
@@ -47,6 +52,7 @@ PUBLIC
 target_compile_definitions(Kyber
 PUBLIC
     NOMINMAX
+    _CRT_SECURE_NO_WARNINGS
     GLFW_INCLUDE_NONE
 )
 

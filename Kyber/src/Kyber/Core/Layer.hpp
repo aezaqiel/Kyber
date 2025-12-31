@@ -20,6 +20,8 @@ namespace Kyber {
 
         virtual auto OnUpdate(f32 dt) -> void {}
 
+        virtual auto OnImGuiRender() -> void {}
+
     private:
         std::string m_Name;
     };
