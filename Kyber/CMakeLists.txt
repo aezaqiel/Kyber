@@ -2,6 +2,7 @@ add_subdirectory(thirdparty/spdlog)
 add_subdirectory(thirdparty/glfw)
 add_subdirectory(thirdparty/glad)
 add_subdirectory(thirdparty/imgui)
+add_subdirectory(thirdparty/glm)
 
 add_library(Kyber STATIC
     src/Kyber/Kyber.hpp
@@ -42,6 +43,7 @@ PUBLIC
     glfw
     glad
     imgui
+    glm
 )
 
 target_precompile_headers(Kyber
@@ -54,6 +56,7 @@ PUBLIC
     NOMINMAX
     _CRT_SECURE_NO_WARNINGS
     GLFW_INCLUDE_NONE
+    GLM_ENABLE_EXPERIMENTAL
 )
 
 if(WIN32)

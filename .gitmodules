@@ -10,3 +10,6 @@
 [submodule "Kyber/thirdparty/imgui"]
 	path = Kyber/thirdparty/imgui
 	url = https://github.com/aezaqiel/imgui
+[submodule "Kyber/thirdparty/glm"]
+	path = Kyber/thirdparty/glm
+	url = https://github.com/aezaqiel/glm
