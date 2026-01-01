@@ -67,6 +67,7 @@ if(WIN32)
 endif()
 
 file(TO_CMAKE_PATH ${CMAKE_CURRENT_BINARY_DIR}/log LOG_FOLDER)
+file(TO_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/res RES_FOLDER)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/PathConfig.inl
