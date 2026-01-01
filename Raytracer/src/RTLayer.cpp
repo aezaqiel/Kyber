@@ -123,10 +123,23 @@ namespace Kyber {
         ImVec2 size = ImGui::GetContentRegionAvail();
 
         if (size.x > 0 && size.y > 0) {
-            Resize(static_cast<u32>(size.x), static_cast<u32>(size.y));
+            f32 imageAR = static_cast<f32>(m_Width) / static_cast<f32>(m_Height);
+            f32 viewportAR = size.x / size.y;
+
+            ImVec2 imageSize = size;
+            if (viewportAR > imageAR) {
+                imageSize.x = size.y * imageAR;
+            } else {
+                imageSize.y = size.x / imageAR;
+            }
+
+            ImVec2 cursorPos = ImGui::GetCursorPos();
+            ImVec2 offset = { (size.x - imageSize.x) * 0.5f, (size.y - imageSize.y) * 0.5f };
+            ImGui::SetCursorPos({ cursorPos.x + offset.x, cursorPos.y + offset.y });
+
             ImGui::Image(
                 static_cast<ImTextureID>(static_cast<intptr_t>(m_Viewport->GetTextureID())),
-                ImVec2(static_cast<f32>(m_Width), static_cast<f32>(m_Height)),
+                imageSize,
                 ImVec2(0, 1), ImVec2(1, 0)
             );
         }
