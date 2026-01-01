@@ -95,6 +95,7 @@ namespace Kyber {
 
     auto RTLayer::OnAttach() -> void
     {
+        Reset();
     }
 
     auto RTLayer::OnDetach() -> void
@@ -108,6 +109,10 @@ namespace Kyber {
         if (!tiles.empty()) {
             m_PostProcess->UploadTiles(m_Accumulator, tiles);
             m_PostProcess->Dispatch();
+        }
+
+        if (m_Running && m_Scheduler.GetProgress() >= 1.0f) {
+            Stop();
         }
     }
 
@@ -143,7 +148,7 @@ namespace Kyber {
         ImGui::End();
         ImGui::PopStyleVar();
 
-        ImGui::Begin("Settings");
+        ImGui::Begin("Configurations");
 
         ImGui::Text("Resolution: %dx%d", m_Width, m_Height);
         ImGui::Text("Samples: %d", m_Samples);
@@ -152,23 +157,30 @@ namespace Kyber {
         ImGui::Separator();
         ImGui::Spacing();
 
-        f32 buttonWidth = ImGui::GetContentRegionAvail().x;
-        if (!m_Running) {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
-            if (ImGui::Button("Start Render", ImVec2(buttonWidth, 40.0f))) {
-                Start();
-            }
-            ImGui::PopStyleColor(3);
-        } else {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
-            if (ImGui::Button("Stop Render", ImVec2(buttonWidth, 40.0f))) {
-                Stop();
-            }
-            ImGui::PopStyleColor(3);
+        f32 buttonWidth = ImGui::GetContentRegionAvail().x / 3.0f - 5.0f;
+        bool isFinished = m_Scheduler.GetProgress() >= 1.0f;
+
+        ImGui::BeginDisabled(m_Running || isFinished);
+        if (ImGui::Button("Start", ImVec2(buttonWidth, 40.0f))) {
+            Start();
+        }
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+             ImGui::SetTooltip(isFinished ? "Render complete. Reset to start again." : "Start/Resume rendering.");
+        }
+        ImGui::EndDisabled();
+
+        ImGui::SameLine();
+
+        ImGui::BeginDisabled(!m_Running);
+        if (ImGui::Button("Stop", ImVec2(buttonWidth, 40.0f))) {
+            Stop();
+        }
+        ImGui::EndDisabled();
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Reset", ImVec2(buttonWidth, 40.0f))) {
+            Reset();
         }
 
         ImGui::End();
@@ -187,14 +199,8 @@ namespace Kyber {
 
     auto RTLayer::Start() -> void
     {
-        Stop();
-
         m_Running = true;
-
-        m_Scheduler.Reset(m_Width, m_Height, m_TileSize, m_Samples);
-        (void)m_RenderQueue.Flush();
-
-        m_Accumulator.assign(m_Width * m_Height, glm::vec4(0.0f));
+        if (m_Scheduler.GetProgress() >= 1.0f) return;
 
         u32 workerCount = std::max(1u, std::thread::hardware_concurrency() - 2);
 
@@ -216,16 +222,15 @@ namespace Kyber {
         m_Workers.clear();
     }
 
-    auto RTLayer::Resize(u32 width, u32 height) -> void
+    auto RTLayer::Reset() -> void
     {
-        if (width == m_Width && height == m_Height) return;
-
         Stop();
 
-        m_Width = width;
-        m_Height = height;
+        m_Scheduler.Reset(m_Width, m_Height, m_TileSize, m_Samples);
+        (void)m_RenderQueue.Flush();
 
-        Start();
+        m_Accumulator.assign(m_Width * m_Height, glm::vec4(0.0f));
+        m_PostProcess->Clear();
     }
 
     auto RTLayer::WorkerThread() -> void

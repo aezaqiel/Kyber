@@ -140,4 +140,12 @@ namespace Kyber {
         glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
 
+    auto PostProcess::Clear() -> void
+    {
+        std::vector<glm::vec4> clear(m_Width * m_Height, glm::vec4(0.0f));
+        std::memcpy(m_MappedPtr, clear.data(), clear.size() * sizeof(glm::vec4));
+
+        Dispatch();
+    }
+
 }

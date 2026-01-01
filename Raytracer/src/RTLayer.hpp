@@ -28,8 +28,7 @@ namespace Kyber {
     private:
         auto Start() -> void;
         auto Stop() -> void;
-
-        auto Resize(u32 width, u32 height) -> void;
+        auto Reset() -> void;
 
         auto WorkerThread() -> void;
         auto ExecuteTask(const RenderTask& task) -> void;
@@ -39,7 +38,7 @@ namespace Kyber {
         // TODO: How do we set this
         u32 m_Width { 800 };
         u32 m_Height { 600 };
-        u32 m_Samples { 32 };
+        u32 m_Samples { 16 };
         u32 m_Depth { 8 };
 
         u32 m_TileSize { 32 };

@@ -15,6 +15,8 @@ namespace Kyber {
         auto UploadTiles(const std::span<const glm::vec4>& framebuffer, const std::vector<Tile>& tiles) const -> void;
         auto Dispatch() const -> void;
 
+        auto Clear() -> void;
+
         auto GetTextureID() const -> u32
         {
             return m_OutputTexture;
