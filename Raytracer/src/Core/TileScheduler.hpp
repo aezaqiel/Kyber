@@ -25,6 +25,8 @@ namespace Kyber {
         auto Reset(u32 width, u32 height, u32 tileSize, u32 totalSamples) -> void;
         auto GetTask(RenderTask& task) -> bool;
 
+        auto GetProgress() -> f32;
+
     private:
         std::vector<Tile> m_Tiles;
         std::atomic<u64> m_Offset { 0 };

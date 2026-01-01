@@ -1,4 +1,4 @@
-#include "lambertian.hpp"
+#include "Lambertian.hpp"
 
 #include <glm/gtx/component_wise.hpp>
 

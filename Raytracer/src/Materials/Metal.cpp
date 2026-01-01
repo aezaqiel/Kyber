@@ -1,4 +1,4 @@
-#include "metal.hpp"
+#include "Metal.hpp"
 
 #include "Core/RNG.hpp"
 

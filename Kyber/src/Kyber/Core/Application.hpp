@@ -52,10 +52,10 @@ namespace Kyber {
         bool m_Running { true };
         bool m_Minimized { false };
 
-        LayerStack m_LayerStack;
-
         std::shared_ptr<Window> m_Window;
         std::shared_ptr<ImGuiLayer> m_ImGuiLayer;
+
+        LayerStack m_LayerStack;
     };
 
     Application* CreateApplication();

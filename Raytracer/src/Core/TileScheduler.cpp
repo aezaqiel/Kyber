@@ -41,4 +41,11 @@ namespace Kyber {
         return true;
     }
 
+    auto TileScheduler::GetProgress() -> f32
+    {
+        u64 current = m_Offset.load(std::memory_order_relaxed);
+        u64 total = static_cast<u64>(m_TotalTiles) * m_TotalSamples;
+        return total > 0 ? (static_cast<f32>(current) / static_cast<f32>(total)) : 0.0f;
+    }
+
 }

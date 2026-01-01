@@ -117,16 +117,35 @@ namespace Kyber {
 
     auto RTLayer::OnImGuiRender() -> void
     {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
         ImGui::Begin("Viewport");
 
         ImVec2 size = ImGui::GetContentRegionAvail();
-        Resize(static_cast<u32>(size.x), static_cast<u32>(size.y));
 
-        ImGui::Image(
-            static_cast<ImTextureID>(static_cast<intptr_t>(m_Viewport->GetTextureID())),
-            ImVec2(static_cast<f32>(m_Width), static_cast<f32>(m_Height)),
-            ImVec2(0, 1), ImVec2(0, 1)
-        );
+        if (size.x > 0 && size.y > 0) {
+            Resize(static_cast<u32>(size.x), static_cast<u32>(size.y));
+            ImGui::Image(
+                static_cast<ImTextureID>(static_cast<intptr_t>(m_Viewport->GetTextureID())),
+                ImVec2(static_cast<f32>(m_Width), static_cast<f32>(m_Height)),
+                ImVec2(0, 1), ImVec2(1, 0)
+            );
+        }
+
+        ImGui::End();
+        ImGui::PopStyleVar();
+
+        ImGui::Begin("Settings");
+
+        ImGui::Text("Resolution: %dx%d", m_Width, m_Height);
+        ImGui::Text("Samples: %d", m_Samples);
+        ImGui::Text("Depth: %d", m_Depth);
+
+        ImGui::End();
+
+        ImGui::Begin("Metrics");
+
+        ImGui::Text("Viewport FPS: %.2f", ImGui::GetIO().Framerate);
+        ImGui::Text("Render Progress: %.2f", m_Scheduler.GetProgress() * 100.0f);
 
         ImGui::End();
     }
