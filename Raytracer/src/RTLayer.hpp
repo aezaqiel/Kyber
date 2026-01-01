@@ -22,8 +22,6 @@ namespace Kyber {
         virtual auto OnAttach() -> void override;
         virtual auto OnDetach() -> void override;
 
-        virtual auto OnEvent(const Kyber::EventDispatcher& dispatcher) -> void override;
-
         virtual auto OnUpdate(Kyber::f32 dt) -> void override;
 
         virtual auto OnImGuiRender() -> void override;
@@ -40,9 +38,9 @@ namespace Kyber {
 
     private:
         // TODO: How do we set this
-        u32 m_Width { 1280 };
-        u32 m_Height { 720 };
-        u32 m_Samples { 32 };
+        u32 m_Width { 1920 };
+        u32 m_Height { 1080 };
+        u32 m_Samples { 1024 };
         u32 m_Depth { 8 };
 
         u32 m_TileSize { 16 };

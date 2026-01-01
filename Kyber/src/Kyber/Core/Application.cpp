@@ -24,11 +24,6 @@ namespace Kyber {
         while (m_Running) {
             Window::PollEvents();
 
-            // TEMPORARY
-            if (Input::IsKeyDown(KeyCode::Escape)) {
-                m_Running = false;
-            }
-
             // TODO: delta time
             for (auto& layer : m_LayerStack) {
                 layer->OnUpdate(0.0f);

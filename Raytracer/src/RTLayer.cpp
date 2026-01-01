@@ -88,23 +88,18 @@ namespace Kyber {
             0.6f,
             10.0f
         );
+
+        m_Framebuffer = std::make_unique<Framebuffer>(m_Width, m_Height);
+        m_Viewport = std::make_unique<Viewport>(m_Width, m_Height);
     }
 
     auto RTLayer::OnAttach() -> void
     {
-        m_Framebuffer = std::make_unique<Framebuffer>(m_Width, m_Height);
-        m_Viewport = std::make_unique<Viewport>(m_Width, m_Height);
-
-        Start();
     }
 
     auto RTLayer::OnDetach() -> void
     {
         Stop();
-    }
-
-    auto RTLayer::OnEvent(const Kyber::EventDispatcher& dispatcher) -> void
-    {
     }
 
     auto RTLayer::OnUpdate(Kyber::f32 dt) -> void
@@ -153,6 +148,18 @@ namespace Kyber {
         ImGui::Text("Samples: %d", m_Samples);
         ImGui::Text("Depth: %d", m_Depth);
 
+        ImGui::Separator();
+
+        if (!m_Running) {
+            if (ImGui::Button("Start Render")) {
+                Start();
+            }
+        } else {
+            if (ImGui::Button("Stop Render")) {
+                Stop();
+            }
+        }
+
         ImGui::End();
 
         ImGui::Begin("Metrics");
@@ -170,6 +177,7 @@ namespace Kyber {
         m_Running = true;
         m_Framebuffer->Clear();
         m_Scheduler.Reset(m_Width, m_Height, m_TileSize, m_Samples);
+        (void)m_RenderQueue.Flush();
 
         u32 workerCount = std::max(1u, std::thread::hardware_concurrency() - 2);
 
