@@ -9,6 +9,7 @@ add_executable(Raytracer
     src/Camera.cpp
     src/Core/TileScheduler.hpp
     src/Core/TileScheduler.cpp
+    src/Core/RenderQueue.hpp
     src/Core/PostProcess.hpp
     src/Core/PostProcess.cpp
     src/Core/RNG.hpp

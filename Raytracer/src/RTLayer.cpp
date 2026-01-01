@@ -104,7 +104,11 @@ namespace Kyber {
 
     auto RTLayer::OnUpdate(Kyber::f32 dt) -> void
     {
-        m_PostProcess->Process(m_Accumulator);
+        auto tiles = m_RenderQueue.Flush();
+        if (!tiles.empty()) {
+            m_PostProcess->UploadTiles(m_Accumulator, tiles);
+            m_PostProcess->Dispatch();
+        }
     }
 
     auto RTLayer::OnImGuiRender() -> void
@@ -172,8 +176,11 @@ namespace Kyber {
         Stop();
 
         m_Running = true;
-        m_Accumulator.assign(m_Width * m_Height, glm::vec4(0.0f));
+
         m_Scheduler.Reset(m_Width, m_Height, m_TileSize, m_Samples);
+        (void)m_RenderQueue.Flush();
+
+        m_Accumulator.assign(m_Width * m_Height, glm::vec4(0.0f));
 
         u32 workerCount = std::max(1u, std::thread::hardware_concurrency() - 2);
 
@@ -212,6 +219,7 @@ namespace Kyber {
         RenderTask task;
         while (m_Running && m_Scheduler.GetTask(task)) {
             ExecuteTask(task);
+            m_RenderQueue.Push(task.tile);
         }
     }
 

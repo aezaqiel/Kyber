@@ -12,7 +12,8 @@ namespace Kyber {
         PostProcess(u32 width, u32 height);
         ~PostProcess();
 
-        auto Process(const std::span<const glm::vec4>& framebuffer) -> void;
+        auto UploadTiles(const std::span<const glm::vec4>& framebuffer, const std::vector<Tile>& tiles) const -> void;
+        auto Dispatch() const -> void;
 
         auto GetTextureID() const -> u32
         {

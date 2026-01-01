@@ -5,6 +5,7 @@
 #include "Camera.hpp"
 
 #include "Core/TileScheduler.hpp"
+#include "Core/RenderQueue.hpp"
 #include "Core/PostProcess.hpp"
 
 #include "Hittables/Hittable.hpp"
@@ -50,6 +51,7 @@ namespace Kyber {
         std::unique_ptr<Camera> m_Camera;
 
         TileScheduler m_Scheduler;
+        RenderQueue m_RenderQueue;
 
         std::vector<glm::vec4> m_Accumulator;
         std::unique_ptr<PostProcess> m_PostProcess;

@@ -88,10 +88,26 @@ namespace Kyber {
         glDeleteTextures(1, &m_Texture);
     }
 
-    auto PostProcess::Process(const std::span<const glm::vec4>& framebuffer) -> void
+    auto PostProcess::UploadTiles(const std::span<const glm::vec4>& framebuffer, const std::vector<Tile>& tiles) const -> void
     {
-        std::memcpy(m_MappedBuffer, framebuffer.data(), m_Width * m_Height * sizeof(glm::vec4));
+        for (const auto& tile : tiles) {
+            usize rowStride = m_Width * sizeof(glm::vec4);
+            usize tileRowBytes = tile.w * sizeof(glm::vec4);
 
+            for (u32 row = 0; row < tile.h; ++row) {
+                usize pixelIndex = tile.x + (tile.y + row) * m_Width;
+
+                std::memcpy(
+                    static_cast<u8*>(m_MappedBuffer) + pixelIndex * sizeof(glm::vec4),
+                    framebuffer.data() + pixelIndex,
+                    tileRowBytes
+                );
+            }
+        }
+    }
+
+    auto PostProcess::Dispatch() const -> void
+    {
         glUseProgram(m_Program);
 
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_Buffer);
