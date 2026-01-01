@@ -150,23 +150,37 @@ namespace Kyber {
         ImGui::Text("Depth: %d", m_Depth);
 
         ImGui::Separator();
+        ImGui::Spacing();
 
+        f32 buttonWidth = ImGui::GetContentRegionAvail().x;
         if (!m_Running) {
-            if (ImGui::Button("Start Render")) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
+            if (ImGui::Button("Start Render", ImVec2(buttonWidth, 40.0f))) {
                 Start();
             }
+            ImGui::PopStyleColor(3);
         } else {
-            if (ImGui::Button("Stop Render")) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
+            if (ImGui::Button("Stop Render", ImVec2(buttonWidth, 40.0f))) {
                 Stop();
             }
+            ImGui::PopStyleColor(3);
         }
 
         ImGui::End();
 
         ImGui::Begin("Metrics");
 
-        ImGui::Text("Viewport FPS: %.2f", ImGui::GetIO().Framerate);
-        ImGui::Text("Render Progress: %.2f", m_Scheduler.GetProgress() * 100.0f);
+        f32 progress = m_Scheduler.GetProgress();
+        char overlay[32];
+        sprintf(overlay, "%.1f%%", progress * 100.0f);
+        ImGui::ProgressBar(progress, ImVec2(-1.0f, 0.0f), overlay);
+
+        ImGui::Text("Viewport FPS: %.1f", ImGui::GetIO().Framerate);
 
         ImGui::End();
     }

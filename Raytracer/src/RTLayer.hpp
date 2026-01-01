@@ -37,9 +37,9 @@ namespace Kyber {
 
     private:
         // TODO: How do we set this
-        u32 m_Width { 1920 };
-        u32 m_Height { 1080 };
-        u32 m_Samples { 1024 };
+        u32 m_Width { 800 };
+        u32 m_Height { 600 };
+        u32 m_Samples { 32 };
         u32 m_Depth { 8 };
 
         u32 m_TileSize { 32 };
