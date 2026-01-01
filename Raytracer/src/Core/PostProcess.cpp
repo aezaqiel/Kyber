@@ -50,19 +50,23 @@ namespace Kyber {
     PostProcess::PostProcess(u32 width, u32 height)
         : m_Width(width), m_Height(height)
     {
-        glCreateTextures(GL_TEXTURE_2D, 1, &m_Texture);
-        glTextureStorage2D(m_Texture, 1, GL_RGBA8, m_Width, m_Height);
-
-        glTextureParameteri(m_Texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(m_Texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
         usize bufferSize = m_Width * m_Height * sizeof(glm::vec4);
         GLbitfield bufferFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
 
-        glCreateBuffers(1, &m_Buffer);
-        glNamedBufferStorage(m_Buffer, bufferSize, nullptr, bufferFlags);
+        glCreateBuffers(1, &m_StagingBuffer);
+        glNamedBufferStorage(m_StagingBuffer, bufferSize, nullptr, bufferFlags);
 
-        m_MappedBuffer = glMapNamedBufferRange(m_Buffer, 0, bufferSize, bufferFlags);
+        m_MappedPtr = glMapNamedBufferRange(m_StagingBuffer, 0, bufferSize, bufferFlags);
+
+        glCreateTextures(GL_TEXTURE_2D, 1, &m_InputTexture);
+        glTextureStorage2D(m_InputTexture, 1, GL_RGBA32F, m_Width, m_Height);
+        glTextureParameteri(m_InputTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTextureParameteri(m_InputTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glCreateTextures(GL_TEXTURE_2D, 1, &m_OutputTexture);
+        glTextureStorage2D(m_OutputTexture, 1, GL_RGBA8, m_Width, m_Height);
+        glTextureParameteri(m_OutputTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(m_OutputTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         std::string src = LoadShader("Shaders/PostProcess.comp");
         const char* srcStr = src.c_str();
@@ -82,41 +86,56 @@ namespace Kyber {
 
     PostProcess::~PostProcess()
     {
-        glUnmapNamedBuffer(m_Buffer);
-        glDeleteBuffers(1, &m_Buffer);
+        glUnmapNamedBuffer(m_StagingBuffer);
+        glDeleteBuffers(1, &m_StagingBuffer);
 
-        glDeleteTextures(1, &m_Texture);
+        glDeleteTextures(1, &m_InputTexture);
+        glDeleteTextures(1, &m_OutputTexture);
+
+        glDeleteProgram(m_Program);
     }
 
     auto PostProcess::UploadTiles(const std::span<const glm::vec4>& framebuffer, const std::vector<Tile>& tiles) const -> void
     {
-        for (const auto& tile : tiles) {
+        std::for_each(std::execution::par, tiles.begin(), tiles.end(), [&](const Tile& tile) {
             usize rowStride = m_Width * sizeof(glm::vec4);
             usize tileRowBytes = tile.w * sizeof(glm::vec4);
 
-            for (u32 row = 0; row < tile.h; ++row) {
-                usize pixelIndex = tile.x + (tile.y + row) * m_Width;
-
+            if (tile.w == m_Width) {
+                usize startPixel = tile.x + tile.y * m_Width;
                 std::memcpy(
-                    static_cast<u8*>(m_MappedBuffer) + pixelIndex * sizeof(glm::vec4),
-                    framebuffer.data() + pixelIndex,
-                    tileRowBytes
+                    static_cast<std::byte*>(m_MappedPtr) + startPixel * sizeof(glm::vec4),
+                    framebuffer.data() + startPixel,
+                    tileRowBytes * tile.h
                 );
+            } else {
+                for (u32 row = 0; row < tile.h; ++row) {
+                    usize pixelIndex = tile.x + (tile.y + row) * m_Width;
+                    std::memcpy(
+                        static_cast<std::byte*>(m_MappedPtr) + pixelIndex * sizeof(glm::vec4),
+                        framebuffer.data() + pixelIndex,
+                        tileRowBytes
+                    );
+                }
             }
-        }
+        });
     }
 
     auto PostProcess::Dispatch() const -> void
     {
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_StagingBuffer);
+        glTextureSubImage2D(m_InputTexture, 0, 0, 0, m_Width, m_Height, GL_RGBA, GL_FLOAT, nullptr);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
         glUseProgram(m_Program);
 
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_Buffer);
-        glBindImageTexture(0, m_Texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
+        glBindTextureUnit(0, m_InputTexture);
+        glBindImageTexture(0, m_OutputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
-        glUniform1i(glGetUniformLocation(m_Program, "u_Width"), m_Width);
-        glUniform1i(glGetUniformLocation(m_Program, "u_Height"), m_Height);
+        glUniform1i(0, m_Width);
+        glUniform1i(1, m_Height);
 
-        glDispatchCompute((m_Width + 15) / 16, (m_Height + 15) / 16, 1);
+        glDispatchCompute((m_Width + 7) / 8, (m_Height + 7) / 8, 1);
 
         glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }

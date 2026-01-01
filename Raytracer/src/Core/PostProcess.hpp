@@ -17,17 +17,18 @@ namespace Kyber {
 
         auto GetTextureID() const -> u32
         {
-            return m_Texture;
+            return m_OutputTexture;
         }
 
     private:
         u32 m_Width { 0 };
         u32 m_Height { 0 };
 
-        u32 m_Buffer { 0 };
-        void* m_MappedBuffer { nullptr };
+        u32 m_StagingBuffer { 0 };
+        void* m_MappedPtr { nullptr };
 
-        u32 m_Texture { 0 };
+        u32 m_InputTexture { 0 };
+        u32 m_OutputTexture { 0 };
 
         u32 m_Program { 0 };
     };
