@@ -89,8 +89,8 @@ namespace Kyber {
             10.0f
         );
 
-        m_Framebuffer = std::make_unique<Framebuffer>(m_Width, m_Height);
-        m_Viewport = std::make_unique<Viewport>(m_Width, m_Height);
+        m_Accumulator.assign(m_Width * m_Height, glm::vec4(0.0f));
+        m_PostProcess = std::make_unique<PostProcess>(m_Width, m_Height);
     }
 
     auto RTLayer::OnAttach() -> void
@@ -104,10 +104,7 @@ namespace Kyber {
 
     auto RTLayer::OnUpdate(Kyber::f32 dt) -> void
     {
-        auto tiles = m_RenderQueue.Flush();
-        if (!tiles.empty()) {
-            m_Viewport->Update(*m_Framebuffer, tiles);
-        }
+        m_PostProcess->Process(m_Accumulator);
     }
 
     auto RTLayer::OnImGuiRender() -> void
@@ -133,7 +130,7 @@ namespace Kyber {
             ImGui::SetCursorPos({ cursorPos.x + offset.x, cursorPos.y + offset.y });
 
             ImGui::Image(
-                static_cast<ImTextureID>(static_cast<intptr_t>(m_Viewport->GetTextureID())),
+                static_cast<ImTextureID>(static_cast<intptr_t>(m_PostProcess->GetTextureID())),
                 imageSize,
                 ImVec2(0, 1), ImVec2(1, 0)
             );
@@ -175,9 +172,8 @@ namespace Kyber {
         Stop();
 
         m_Running = true;
-        m_Framebuffer->Clear();
+        m_Accumulator.assign(m_Width * m_Height, glm::vec4(0.0f));
         m_Scheduler.Reset(m_Width, m_Height, m_TileSize, m_Samples);
-        (void)m_RenderQueue.Flush();
 
         u32 workerCount = std::max(1u, std::thread::hardware_concurrency() - 2);
 
@@ -205,12 +201,8 @@ namespace Kyber {
 
         Stop();
 
-        (void)m_RenderQueue.Flush();
-
         m_Width = width;
         m_Height = height;
-        m_Framebuffer->Resize(width, height);
-        m_Viewport->Resize(width, height);
 
         Start();
     }
@@ -220,17 +212,11 @@ namespace Kyber {
         RenderTask task;
         while (m_Running && m_Scheduler.GetTask(task)) {
             ExecuteTask(task);
-            m_RenderQueue.Push(task.tile);
         }
     }
 
     auto RTLayer::ExecuteTask(const RenderTask& task) -> void
     {
-        std::span<glm::vec3> accumulator = m_Framebuffer->GetAccumulatorData();
-        std::span<glm::vec3> image = m_Framebuffer->GetImageData();
-
-        f32 invSample = 1.0f / static_cast<f32>(task.sample);
-
         for (u32 y = task.tile.y; y < task.tile.y + task.tile.h; ++y) {
             for (u32 x = task.tile.x; x < task.tile.x + task.tile.w; ++x) {
                 glm::vec2 offset = RNG::Vec2() - 0.5f;
@@ -239,8 +225,8 @@ namespace Kyber {
                 glm::vec3 color = TraceRay(ray);
 
                 usize index = x + y * m_Width;
-                accumulator[index] += color;
-                image[index] = accumulator[index] * invSample;
+                m_Accumulator[index] += glm::vec4(color, 0.0f);
+                m_Accumulator[index].a = static_cast<f32>(task.sample);
             }
         }
     }

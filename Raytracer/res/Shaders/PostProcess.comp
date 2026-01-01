@@ -1,0 +1,41 @@
+#version 460 core
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(std430, binding = 0) readonly buffer InputBuffer {
+    vec4 data[];
+} u_Input;
+
+layout(binding = 0, rgba8) writeonly uniform image2D u_Output;
+
+uniform int u_Width;
+uniform int u_Height;
+
+vec3 aces(vec3 x)
+{
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+
+    return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
+
+void main()
+{
+    ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
+    if (coords.x >= u_Width || coords.y >= u_Height) {
+        return;
+    }
+
+    uint index = coords.x + coords.y * u_Width;
+    
+    vec3 color = u_Input.data[index].rgb;
+    color = color / u_Input.data[index].a;
+
+    color = aces(color);
+    color = pow(color, vec3(1.0 / 2.2));
+
+    imageStore(u_Output, coords, vec4(color, 1.0));
+}

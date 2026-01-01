@@ -5,9 +5,7 @@
 #include "Camera.hpp"
 
 #include "Core/TileScheduler.hpp"
-#include "Core/RenderQueue.hpp"
-#include "Core/Framebuffer.hpp"
-#include "Core/Viewport.hpp"
+#include "Core/PostProcess.hpp"
 
 #include "Hittables/Hittable.hpp"
 
@@ -43,20 +41,18 @@ namespace Kyber {
         u32 m_Samples { 1024 };
         u32 m_Depth { 8 };
 
-        u32 m_TileSize { 16 };
+        u32 m_TileSize { 32 };
 
         std::atomic<bool> m_Running { false };
+        std::vector<std::thread> m_Workers;
 
         std::unique_ptr<Hittable> m_Scene;
         std::unique_ptr<Camera> m_Camera;
 
         TileScheduler m_Scheduler;
-        RenderQueue m_RenderQueue;
 
-        std::unique_ptr<Framebuffer> m_Framebuffer;
-        std::unique_ptr<Viewport> m_Viewport;
-
-        std::vector<std::thread> m_Workers;
+        std::vector<glm::vec4> m_Accumulator;
+        std::unique_ptr<PostProcess> m_PostProcess;
     };
 
 }
