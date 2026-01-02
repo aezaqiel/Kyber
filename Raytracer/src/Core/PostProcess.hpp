@@ -16,6 +16,7 @@ namespace Kyber {
         auto Dispatch() const -> void;
 
         auto Clear() -> void;
+        auto Save(const std::string& filename) -> void;
 
         auto GetTextureID() const -> u32
         {

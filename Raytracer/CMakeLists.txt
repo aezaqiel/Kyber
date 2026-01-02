@@ -41,6 +41,7 @@ add_executable(Raytracer
 target_include_directories(Raytracer
 PRIVATE
     src
+    thirdparty/stb
     ${CMAKE_CURRENT_BINARY_DIR}/generated
 )
 
@@ -50,6 +51,7 @@ PRIVATE
 )
 
 file(TO_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/res RES_FOLDER)
+file(TO_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/render OUT_FOLDER)
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/PathConfig.inl

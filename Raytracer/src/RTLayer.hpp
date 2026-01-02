@@ -38,9 +38,9 @@ namespace Kyber {
         // TODO: How do we set this
         glm::uvec2 m_Resolution { 800, 600 };
 
-        u32 m_Width { 3840 };
-        u32 m_Height { 2160 };
-        u32 m_Samples { 1024 };
+        u32 m_Width { 400 };
+        u32 m_Height { 300 };
+        u32 m_Samples { 128 };
         u32 m_Depth { 8 };
 
         u32 m_TileSize { 32 };

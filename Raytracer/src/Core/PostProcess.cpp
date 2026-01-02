@@ -2,6 +2,9 @@
 
 #include <glad/gl.h>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+
 #include <PathConfig.inl>
 
 namespace Kyber {
@@ -9,6 +12,7 @@ namespace Kyber {
     namespace {
 
         std::filesystem::path s_ResPath(PathConfig::ResDir);
+        std::filesystem::path s_OutPath(PathConfig::OutDir);
 
         std::string LoadShader(const std::string& filename)
         {
@@ -146,6 +150,26 @@ namespace Kyber {
         std::memcpy(m_MappedPtr, clear.data(), clear.size() * sizeof(glm::vec4));
 
         Dispatch();
+    }
+
+    auto PostProcess::Save(const std::string& filename) -> void
+    {
+        std::vector<u8> pixels(m_Width * m_Height * 4, 0);
+        glGetTextureImage(m_OutputTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.size(), pixels.data());
+
+        if (!std::filesystem::exists(s_OutPath)) {
+            std::filesystem::create_directory(s_OutPath);
+        }
+
+        auto outfile = (s_OutPath / filename).string();
+
+        stbi_flip_vertically_on_write(true);
+
+        if (stbi_write_png(outfile.c_str(), m_Width, m_Height, 4, pixels.data(), m_Width * 4)) {
+            KINFO("Image saved to {}", filename);
+        } else {
+            KERROR("Failed to save image");
+        }
     }
 
 }

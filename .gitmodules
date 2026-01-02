@@ -13,3 +13,6 @@
 [submodule "Kyber/thirdparty/glm"]
 	path = Kyber/thirdparty/glm
 	url = https://github.com/aezaqiel/glm
+[submodule "Raytracer/thirdparty/stb"]
+	path = Raytracer/thirdparty/stb
+	url = https://github.com/nothings/stb

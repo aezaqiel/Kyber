@@ -115,6 +115,7 @@ namespace Kyber {
 
         if (m_Running && m_Scheduler.GetProgress() >= 1.0f) {
             Stop();
+            m_PostProcess->Save("Finished.png");
         }
     }
 
@@ -181,9 +182,11 @@ namespace Kyber {
         ImGui::SameLine();
 
         ImGui::BeginDisabled(!m_Running);
+
         if (ImGui::Button("Stop", ImVec2(buttonWidth, 40.0f))) {
             Stop();
         }
+
         ImGui::EndDisabled();
 
         ImGui::SameLine();
@@ -191,6 +194,16 @@ namespace Kyber {
         if (ImGui::Button("Reset", ImVec2(buttonWidth, 40.0f))) {
             Reset();
         }
+
+        ImGui::Spacing();
+
+        ImGui::BeginDisabled(m_Running);
+
+        if (ImGui::Button("Save Image", ImVec2(ImGui::GetContentRegionAvail().x, 40.0f))) {
+            m_PostProcess->Save("Output.png");
+        }
+
+        ImGui::EndDisabled();
 
         ImGui::Spacing();
 
