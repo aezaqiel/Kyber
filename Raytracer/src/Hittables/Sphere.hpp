@@ -13,10 +13,17 @@ namespace Kyber {
         virtual ~Sphere() = default;
 
         virtual auto Hit(const Ray& ray, Interval clip) const -> std::optional<HitRecord> override;
+        virtual auto GetBBox() const -> AABB override
+        {
+            return m_BBox;
+        }
 
     private:
         glm::vec3 m_Center;
         f32 m_Radius { 0 };
+
+        std::shared_ptr<Material> m_Material;
+        AABB m_BBox;
     };
 
 }

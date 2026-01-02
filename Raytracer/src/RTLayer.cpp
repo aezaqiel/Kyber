@@ -5,7 +5,8 @@
 
 #include "Core/RNG.hpp"
 
-#include "Hittables/HittableList.hpp"
+#include "Acceleration/BVH.hpp"
+
 #include "Hittables/Sphere.hpp"
 
 #include "Materials/Material.hpp"
@@ -17,7 +18,7 @@ namespace Kyber {
 
     namespace {
 
-        auto Book1Scene() -> std::unique_ptr<HittableList>
+        auto Book1Scene() -> std::shared_ptr<Hittable>
         {
             std::vector<std::shared_ptr<Hittable>> hittables;
 
@@ -70,7 +71,7 @@ namespace Kyber {
                 std::make_shared<Metal>(glm::vec3(0.7f, 0.6f, 0.5f), 0.0f)
             ));
 
-            return std::make_unique<HittableList>(hittables);
+            return BVH::Create(std::move(hittables));
         }
     
     }

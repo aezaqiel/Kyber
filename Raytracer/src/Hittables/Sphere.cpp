@@ -3,8 +3,12 @@
 namespace Kyber {
 
     Sphere::Sphere(const glm::vec3& center, f32 radius, const std::shared_ptr<Material>& material)
-        : Hittable(material), m_Center(center), m_Radius(std::max(radius, 0.0f))
+        : m_Center(center)
+        , m_Radius(std::max(radius, 0.0f))
+        , m_Material(material)
     {
+        glm::vec3 rvec(radius);
+        m_BBox = AABB(center - rvec, center + rvec);
     }
 
     auto Sphere::Hit(const Ray& ray, Interval clip) const -> std::optional<HitRecord>

@@ -2,13 +2,7 @@
 
 namespace Kyber {
 
-    HittableList::HittableList()
-        : Hittable(nullptr)
-    {
-    }
-
     HittableList::HittableList(const std::span<std::shared_ptr<Hittable>> hittables)
-        : Hittable(nullptr)
     {
         m_Hittables.assign(hittables.begin(), hittables.end());
     }
@@ -16,11 +10,14 @@ namespace Kyber {
     auto HittableList::Push(const std::shared_ptr<Hittable>& hittable)
     {
         m_Hittables.push_back(hittable);
+        m_BBox = AABB(m_BBox, hittable->GetBBox());
     }
 
     auto HittableList::Push(const std::vector<std::shared_ptr<Hittable>>& hittables)
     {
-        m_Hittables.insert(m_Hittables.end(), hittables.begin(), hittables.end());
+        for (const auto& hittable : hittables) {
+            Push(hittable);
+        }
     }
 
     auto HittableList::Hit(const Ray& ray, Interval clip) const -> std::optional<HitRecord>

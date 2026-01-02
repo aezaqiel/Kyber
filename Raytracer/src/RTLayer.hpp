@@ -38,9 +38,9 @@ namespace Kyber {
         // TODO: How do we set this
         glm::uvec2 m_Resolution { 800, 600 };
 
-        u32 m_Width { 800 };
-        u32 m_Height { 600 };
-        u32 m_Samples { 16 };
+        u32 m_Width { 3840 };
+        u32 m_Height { 2160 };
+        u32 m_Samples { 1024 };
         u32 m_Depth { 8 };
 
         u32 m_TileSize { 32 };
@@ -48,7 +48,7 @@ namespace Kyber {
         std::atomic<bool> m_Running { false };
         std::vector<std::thread> m_Workers;
 
-        std::unique_ptr<Hittable> m_Scene;
+        std::shared_ptr<Hittable> m_Scene;
         std::unique_ptr<Camera> m_Camera;
 
         TileScheduler m_Scheduler;

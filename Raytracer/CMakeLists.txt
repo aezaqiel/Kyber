@@ -7,6 +7,10 @@ add_executable(Raytracer
 
     src/Camera.hpp
     src/Camera.cpp
+
+    src/Acceleration/BVH.hpp
+    src/Acceleration/BVH.cpp
+
     src/Core/TileScheduler.hpp
     src/Core/TileScheduler.cpp
     src/Core/RenderQueue.hpp
@@ -16,6 +20,8 @@ add_executable(Raytracer
 
     src/Containers/Ray.hpp
     src/Containers/Interval.hpp
+    src/Containers/AABB.hpp
+    src/Containers/AABB.cpp
 
     src/Hittables/Hittable.hpp
     src/Hittables/Sphere.hpp

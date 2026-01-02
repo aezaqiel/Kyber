@@ -4,6 +4,7 @@
 
 #include "Containers/Ray.hpp"
 #include "Containers/Interval.hpp"
+#include "Containers/AABB.hpp"
 
 namespace Kyber {
 
@@ -28,17 +29,10 @@ namespace Kyber {
     class Hittable
     {
     public:
-        Hittable(const std::shared_ptr<Material>& material)
-            : m_Material(material)
-        {
-        }
-
         virtual ~Hittable() = default;
 
         virtual auto Hit(const Ray& ray, Interval clip) const -> std::optional<HitRecord> = 0;
-    
-    protected:
-        std::shared_ptr<Material> m_Material;
+        virtual auto GetBBox() const -> AABB = 0;
     };
 
 }
