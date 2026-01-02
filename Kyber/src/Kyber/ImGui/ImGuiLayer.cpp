@@ -1,5 +1,6 @@
 #include "ImGuiLayer.hpp"
 
+#include <imgui_internal.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_glfw.h>
 
@@ -214,7 +215,7 @@ namespace Kyber {
         ImGui::PopStyleVar(2);
 
         ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_NoTabBar);
     }
 
     auto ImGuiLayer::End() -> void

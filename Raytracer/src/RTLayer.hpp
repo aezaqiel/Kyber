@@ -32,10 +32,12 @@ namespace Kyber {
 
         auto WorkerThread() -> void;
         auto ExecuteTask(const RenderTask& task) -> void;
-        auto TraceRay(Ray ray) -> glm::vec3;
+        auto TraceRay(Ray ray, u32& rayCount) -> glm::vec3;
 
     private:
         // TODO: How do we set this
+        glm::uvec2 m_Resolution { 800, 600 };
+
         u32 m_Width { 800 };
         u32 m_Height { 600 };
         u32 m_Samples { 16 };
@@ -54,6 +56,10 @@ namespace Kyber {
 
         std::vector<glm::vec4> m_Accumulator;
         std::unique_ptr<PostProcess> m_PostProcess;
+
+        std::chrono::time_point<std::chrono::steady_clock> m_RenderStartTime;
+        f32 m_AccumulatedTime { 0.0f };
+        std::atomic<u64> m_TotalRayCount { 0 };
     };
 
 }

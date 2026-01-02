@@ -1,6 +1,7 @@
 #include "RTLayer.hpp"
 
 #include <imgui.h>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "Core/RNG.hpp"
 
@@ -118,7 +119,6 @@ namespace Kyber {
 
     auto RTLayer::OnImGuiRender() -> void
     {
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
         ImGui::Begin("Viewport");
 
         ImVec2 size = ImGui::GetContentRegionAvail();
@@ -146,19 +146,27 @@ namespace Kyber {
         }
 
         ImGui::End();
-        ImGui::PopStyleVar();
 
-        ImGui::Begin("Configurations");
+        ImGui::Begin("Sidebar");
 
-        ImGui::Text("Resolution: %dx%d", m_Width, m_Height);
-        ImGui::Text("Samples: %d", m_Samples);
-        ImGui::Text("Depth: %d", m_Depth);
+        bool isFinished = m_Scheduler.GetProgress() >= 1.0f;
 
-        ImGui::Separator();
+        ImGui::SeparatorText("Parameters");
+        ImGui::Spacing();
+
+        ImGui::BeginDisabled(true);
+
+        ImGui::InputScalarN("Resolution", ImGuiDataType_U32, glm::value_ptr(m_Resolution), 2);
+        ImGui::InputScalar("Samples", ImGuiDataType_U32, &m_Samples);
+        ImGui::InputScalar("Depth", ImGuiDataType_U32, &m_Depth);
+
+        ImGui::EndDisabled();
+
+        ImGui::Spacing();
+        ImGui::SeparatorText("Render");
         ImGui::Spacing();
 
         f32 buttonWidth = ImGui::GetContentRegionAvail().x / 3.0f - 5.0f;
-        bool isFinished = m_Scheduler.GetProgress() >= 1.0f;
 
         ImGui::BeginDisabled(m_Running || isFinished);
         if (ImGui::Button("Start", ImVec2(buttonWidth, 40.0f))) {
@@ -183,16 +191,45 @@ namespace Kyber {
             Reset();
         }
 
-        ImGui::End();
-
-        ImGui::Begin("Metrics");
+        ImGui::Spacing();
 
         f32 progress = m_Scheduler.GetProgress();
+
         char overlay[32];
         sprintf(overlay, "%.1f%%", progress * 100.0f);
         ImGui::ProgressBar(progress, ImVec2(-1.0f, 0.0f), overlay);
 
+        ImGui::Spacing();
+        ImGui::SeparatorText("Performance");
+        ImGui::Spacing();
+        
+        f32 totalTime = m_AccumulatedTime;
+        if (m_Running) {
+            auto now = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<f32> elapsed = now - m_RenderStartTime;
+            totalTime += elapsed.count();
+        }
+
+        u64 rayCount = m_TotalRayCount.load();
+        f32 mRays = static_cast<f32>(rayCount) / 1'000'000.0f;
+        f32 mRaysPerSec = totalTime > 0.0f ? (mRays / totalTime) : 0.0f;
+
+        f32 estimatedRemaining = 0.0f;
+        if (progress > 0.0f && progress < 1.0f) {
+            estimatedRemaining = (totalTime / progress) - totalTime;
+        }
+
         ImGui::Text("Viewport FPS: %.1f", ImGui::GetIO().Framerate);
+        
+        ImGui::Text("Elapsed:  %02d:%05.2f", (int)totalTime / 60, fmod(totalTime, 60.0f));
+        if (progress < 1.0f && m_Running) {
+            ImGui::Text("Remaining: %02d:%05.2f", (int)estimatedRemaining / 60, fmod(estimatedRemaining, 60.0f));
+        } else {
+            ImGui::Text("Remaining: --:--");
+        }
+
+        ImGui::Text("Total Rays:    %.2f M", mRays);
+        ImGui::Text("Performance:   %.2f MRays/s", mRaysPerSec);
 
         ImGui::End();
     }
@@ -202,8 +239,9 @@ namespace Kyber {
         m_Running = true;
         if (m_Scheduler.GetProgress() >= 1.0f) return;
 
-        u32 workerCount = std::max(1u, std::thread::hardware_concurrency() - 2);
+        m_RenderStartTime = std::chrono::steady_clock::now();
 
+        u32 workerCount = std::max(1u, std::thread::hardware_concurrency() - 2);
         for (u32 i = 0; i < workerCount; ++i) {
             m_Workers.emplace_back(&RTLayer::WorkerThread, this);
         }
@@ -211,6 +249,12 @@ namespace Kyber {
 
     auto RTLayer::Stop() -> void
     {
+        if (m_Running) {
+            auto now = std::chrono::steady_clock::now();
+            std::chrono::duration<f32> elapsed = now - m_RenderStartTime;
+            m_AccumulatedTime += elapsed.count();
+        }
+
         m_Running = false;
 
         for (auto& worker : m_Workers) {
@@ -231,6 +275,9 @@ namespace Kyber {
 
         m_Accumulator.assign(m_Width * m_Height, glm::vec4(0.0f));
         m_PostProcess->Clear();
+
+        m_TotalRayCount = 0;
+        m_AccumulatedTime = 0.0f;
     }
 
     auto RTLayer::WorkerThread() -> void
@@ -244,26 +291,36 @@ namespace Kyber {
 
     auto RTLayer::ExecuteTask(const RenderTask& task) -> void
     {
+        u64 taskRayCount = 0;
+
         for (u32 y = task.tile.y; y < task.tile.y + task.tile.h; ++y) {
             for (u32 x = task.tile.x; x < task.tile.x + task.tile.w; ++x) {
                 glm::vec2 offset = RNG::Vec2() - 0.5f;
                 Ray ray = m_Camera->GetRay(x, y, offset);
 
-                glm::vec3 color = TraceRay(ray);
+                u32 pixelRays = 0;
+                glm::vec3 color = TraceRay(ray, pixelRays);
+                taskRayCount += pixelRays;
 
                 usize index = x + y * m_Width;
                 m_Accumulator[index] += glm::vec4(color, 0.0f);
                 m_Accumulator[index].a = static_cast<f32>(task.sample);
             }
         }
+
+        m_TotalRayCount += taskRayCount;
     }
 
-    auto RTLayer::TraceRay(Ray ray) -> glm::vec3
+    auto RTLayer::TraceRay(Ray ray, u32& rayCount) -> glm::vec3
     {
+        rayCount = 0;
+
         glm::vec3 throughput(1.0f);
         glm::vec3 accumulated(0.0f);
 
         for (u32 depth = 0; depth < m_Depth; ++depth) {
+            rayCount++;
+
             if (auto hit = m_Scene->Hit(ray, Interval(0.0001f, std::numeric_limits<f32>::infinity()))) {
                 // TODO: emissions
                 accumulated += throughput * glm::vec3(0.0f);
