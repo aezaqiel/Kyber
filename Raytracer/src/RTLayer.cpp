@@ -5,8 +5,6 @@
 
 #include "Core/RNG.hpp"
 
-#include "Acceleration/BVH.hpp"
-
 #include "Hittables/Sphere.hpp"
 
 #include "Materials/Material.hpp"
@@ -18,7 +16,7 @@ namespace Kyber {
 
     namespace {
 
-        auto Book1Scene() -> std::shared_ptr<Hittable>
+        auto Book1Scene() -> std::unique_ptr<BVH>
         {
             std::vector<std::shared_ptr<Hittable>> hittables;
 
@@ -73,16 +71,35 @@ namespace Kyber {
 
             return BVH::Create(std::move(hittables));
         }
+
+        void ColoredTextCentered(ImVec4 color, std::string text)
+        {
+            f32 windowWidth = ImGui::GetWindowSize().x;
+            f32 textWidth = ImGui::CalcTextSize(text.c_str()).x;
+
+            f32 textIndent = (windowWidth - textWidth) * 0.5f;
+
+            f32 minIndent = 20.0f;
+            if (textIndent <= minIndent) {
+                textIndent = minIndent;
+            }
+
+            ImGui::SameLine(textIndent);
+            ImGui::PushTextWrapPos(windowWidth - textIndent);
+            // ImGui::TextWrappedV(color, "%s", text.c_str());
+            ImGui::TextColored(color, "%s", text.c_str());
+            ImGui::PopTextWrapPos();
+        }
     
     }
 
     RTLayer::RTLayer()
     {
-        m_Scene = Book1Scene();
+        m_Aggregate = Book1Scene();
 
         m_Camera = std::make_unique<Camera>(
-            m_Width,
-            m_Height,
+            m_Resolution.x,
+            m_Resolution.y,
             20.0f,
             glm::vec3(13.0, 2.0f, 3.0f),
             glm::vec3(0.0f, 0.0f, 0.0f),
@@ -91,8 +108,8 @@ namespace Kyber {
             10.0f
         );
 
-        m_Accumulator.assign(m_Width * m_Height, glm::vec4(0.0f));
-        m_PostProcess = std::make_unique<PostProcess>(m_Width, m_Height);
+        m_Accumulator.assign(m_Resolution.x * m_Resolution.y, glm::vec4(0.0f));
+        m_PostProcess = std::make_unique<PostProcess>(m_Resolution.x, m_Resolution.y);
     }
 
     auto RTLayer::OnAttach() -> void
@@ -126,7 +143,7 @@ namespace Kyber {
         ImVec2 size = ImGui::GetContentRegionAvail();
 
         if (size.x > 0 && size.y > 0) {
-            f32 imageAR = static_cast<f32>(m_Width) / static_cast<f32>(m_Height);
+            f32 imageAR = static_cast<f32>(m_Resolution.x) / static_cast<f32>(m_Resolution.y);
             f32 viewportAR = size.x / size.y;
 
             ImVec2 imageSize = size;
@@ -149,101 +166,186 @@ namespace Kyber {
 
         ImGui::End();
 
-        ImGui::Begin("Sidebar");
+        ImGui::Begin("Control Panel");
 
-        bool isFinished = m_Scheduler.GetProgress() >= 1.0f;
+        f32 progress = m_Scheduler.GetProgress();
+        bool isFinished = progress >= 1.0f;
+        
+        // Status Indicator
+        if (m_Running) {
+            ColoredTextCentered(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "Status: Rendering");
+        } else if (isFinished && m_TotalRayCount > 0) {
+            ColoredTextCentered(ImVec4(0.2f, 0.6f, 1.0f, 1.0f), "Status: Finished");
+        } else {
+            ColoredTextCentered(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Status: Idle");
+        }
 
-        ImGui::SeparatorText("Parameters");
         ImGui::Spacing();
-
-        ImGui::BeginDisabled(true);
-
-        ImGui::InputScalarN("Resolution", ImGuiDataType_U32, glm::value_ptr(m_Resolution), 2);
-        ImGui::InputScalar("Samples", ImGuiDataType_U32, &m_Samples);
-        ImGui::InputScalar("Depth", ImGuiDataType_U32, &m_Depth);
-
-        ImGui::EndDisabled();
-
-        ImGui::Spacing();
-        ImGui::SeparatorText("Render");
+        ImGui::Separator();
         ImGui::Spacing();
 
         f32 buttonWidth = ImGui::GetContentRegionAvail().x / 3.0f - 5.0f;
 
         ImGui::BeginDisabled(m_Running || isFinished);
-        if (ImGui::Button("Start", ImVec2(buttonWidth, 40.0f))) {
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.24, 0.70, 0.44, 1.0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.29, 0.75, 0.49, 1.0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.20, 0.65, 0.39, 1.0));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.95, 0.95, 0.95, 1.0));
+
+        if (ImGui::Button("Start", ImVec2(buttonWidth, 30.0f))) {
             Start();
         }
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-             ImGui::SetTooltip(isFinished ? "Render complete. Reset to start again." : "Start/Resume rendering.");
-        }
+
+        ImGui::PopStyleColor(4);
+
         ImGui::EndDisabled();
 
         ImGui::SameLine();
 
         ImGui::BeginDisabled(!m_Running);
 
-        if (ImGui::Button("Stop", ImVec2(buttonWidth, 40.0f))) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85, 0.25, 0.25, 1.0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.90, 0.30, 0.30, 1.0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75, 0.20, 0.20, 1.0));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.95, 0.95, 0.95, 1.0));
+
+        if (ImGui::Button("Stop", ImVec2(buttonWidth, 30.0f))) {
             Stop();
         }
+
+        ImGui::PopStyleColor(4);
 
         ImGui::EndDisabled();
 
         ImGui::SameLine();
 
-        if (ImGui::Button("Reset", ImVec2(buttonWidth, 40.0f))) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.95, 0.60, 0.10, 1.0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.00, 0.65, 0.15, 1.0));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.85, 0.55, 0.05, 1.0));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.95, 0.95, 0.95, 1.0));
+
+        if (ImGui::Button("Reset", ImVec2(buttonWidth, 30.0f))) {
             Reset();
         }
 
-        ImGui::Spacing();
+        ImGui::PopStyleColor(4);
 
         ImGui::BeginDisabled(m_Running);
 
-        if (ImGui::Button("Save Image", ImVec2(ImGui::GetContentRegionAvail().x, 40.0f))) {
+        if (ImGui::Button("Save Image", ImVec2(ImGui::GetContentRegionAvail().x, 30.0f))) {
             m_PostProcess->Save("Output.png");
         }
 
         ImGui::EndDisabled();
 
         ImGui::Spacing();
-
-        f32 progress = m_Scheduler.GetProgress();
+        ImGui::Separator();
+        ImGui::Spacing();
 
         char overlay[32];
         sprintf(overlay, "%.1f%%", progress * 100.0f);
         ImGui::ProgressBar(progress, ImVec2(-1.0f, 0.0f), overlay);
 
         ImGui::Spacing();
-        ImGui::SeparatorText("Performance");
-        ImGui::Spacing();
+
+        bool settingsChanged = false;
+
+        if (ImGui::CollapsingHeader("Render Settings", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::BeginDisabled(true);
+            settingsChanged |= ImGui::InputScalarN("Resolution", ImGuiDataType_U32, glm::value_ptr(m_Resolution), 2);
+            settingsChanged |= ImGui::InputScalar("Samples", ImGuiDataType_U32, &m_Samples);
+            settingsChanged |= ImGui::SliderInt("Depth", (int*)&m_Depth, 1, 100);
+            settingsChanged |= ImGui::DragInt("Tile Size", (int*)&m_TileSize, 1.0f, 16, 256);
+            ImGui::EndDisabled();
+        }
+
+        if (settingsChanged) {
+            Reset();
+        }
+
+        if (ImGui::CollapsingHeader("Scene Stats", ImGuiTreeNodeFlags_DefaultOpen)) {
+            auto stats = m_Aggregate->GetStats();
+    
+            // Start a table with 2 columns
+            if (ImGui::BeginTable("SceneStatsTable", 2)) {
+                // Setup the first column to be a fixed width so labels look consistent
+                ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                ImGui::TableSetupColumn("Value");
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::Text("Total Hittables");
+                ImGui::TableNextColumn(); ImGui::Text(": %u", stats.TotalHittables);
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::Text("Internal Nodes");
+                ImGui::TableNextColumn(); ImGui::Text(": %u", stats.InternalNodes);
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::Text("Leaf Nodes");
+                ImGui::TableNextColumn(); ImGui::Text(": %u", stats.LeafNodes);
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::Text("Tree Depth");
+                ImGui::TableNextColumn(); ImGui::Text(": %u", stats.TreeDepth);
+
+                ImGui::EndTable();
+            }
+        }
+
+        // 2. Performance Section
+        if (ImGui::CollapsingHeader("Performance", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // --- Logic Calculations (Kept same as your code) ---
+            f32 totalTime = m_AccumulatedTime;
+            if (m_Running) {
+                auto now = std::chrono::steady_clock::now();
+                std::chrono::duration<f32> elapsed = now - m_RenderStartTime;
+                totalTime += elapsed.count();
+            }
+
+            u64 rayCount = m_TotalRayCount.load();
+            f32 mRays = static_cast<f32>(rayCount) / 1'000'000.0f;
+            f32 mRaysPerSec = totalTime > 0.0f ? (mRays / totalTime) : 0.0f;
+
+            f32 estimatedRemaining = 0.0f;
+            if (progress > 0.0f && progress < 1.0f && mRaysPerSec > 0.0f) {
+                estimatedRemaining = (totalTime / progress) - totalTime;
+            }
+            // --------------------------------------------------
+
+            // Start Table for Performance Stats
+            if (ImGui::BeginTable("PerfTable", 2)) {
+                ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 100.0f);
+                ImGui::TableSetupColumn("Value");
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::Text("Viewport FPS");
+                ImGui::TableNextColumn(); ImGui::Text(": %.1f", ImGui::GetIO().Framerate);
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::Text("Elapsed");
+                ImGui::TableNextColumn(); ImGui::Text(": %02d:%05.2f", (int)totalTime / 60, fmod(totalTime, 60.0f));
         
-        f32 totalTime = m_AccumulatedTime;
-        if (m_Running) {
-            auto now = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<f32> elapsed = now - m_RenderStartTime;
-            totalTime += elapsed.count();
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::Text("Remaining");
+                ImGui::TableNextColumn();
+                if (m_Running && progress < 1.0f) {
+                    ImGui::Text(": %02d:%05.2f", (int)estimatedRemaining / 60, fmod(estimatedRemaining, 60.0f));
+                } else {
+                    ImGui::Text(": --:--");
+                }
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::Text("Total Rays");
+                ImGui::TableNextColumn(); ImGui::Text(": %.2f M", mRays);
+
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::Text("Ray Speed");
+                ImGui::TableNextColumn(); ImGui::Text(": %.2f MRays/s", mRaysPerSec);
+
+                ImGui::EndTable();
+            }
         }
-
-        u64 rayCount = m_TotalRayCount.load();
-        f32 mRays = static_cast<f32>(rayCount) / 1'000'000.0f;
-        f32 mRaysPerSec = totalTime > 0.0f ? (mRays / totalTime) : 0.0f;
-
-        f32 estimatedRemaining = 0.0f;
-        if (progress > 0.0f && progress < 1.0f) {
-            estimatedRemaining = (totalTime / progress) - totalTime;
-        }
-
-        ImGui::Text("Viewport FPS: %.1f", ImGui::GetIO().Framerate);
-        
-        ImGui::Text("Elapsed:  %02d:%05.2f", (int)totalTime / 60, fmod(totalTime, 60.0f));
-        if (progress < 1.0f && m_Running) {
-            ImGui::Text("Remaining: %02d:%05.2f", (int)estimatedRemaining / 60, fmod(estimatedRemaining, 60.0f));
-        } else {
-            ImGui::Text("Remaining: --:--");
-        }
-
-        ImGui::Text("Total Rays:    %.2f M", mRays);
-        ImGui::Text("Performance:   %.2f MRays/s", mRaysPerSec);
 
         ImGui::End();
     }
@@ -284,10 +386,10 @@ namespace Kyber {
     {
         Stop();
 
-        m_Scheduler.Reset(m_Width, m_Height, m_TileSize, m_Samples);
+        m_Scheduler.Reset(m_Resolution.x, m_Resolution.y, m_TileSize, m_Samples);
         (void)m_RenderQueue.Flush();
 
-        m_Accumulator.assign(m_Width * m_Height, glm::vec4(0.0f));
+        m_Accumulator.assign(m_Resolution.x * m_Resolution.y, glm::vec4(0.0f));
         m_PostProcess->Clear();
 
         m_TotalRayCount = 0;
@@ -316,7 +418,7 @@ namespace Kyber {
                 glm::vec3 color = TraceRay(ray, pixelRays);
                 taskRayCount += pixelRays;
 
-                usize index = x + y * m_Width;
+                usize index = x + y * m_Resolution.x;
                 m_Accumulator[index] += glm::vec4(color, 0.0f);
                 m_Accumulator[index].a = static_cast<f32>(task.sample);
             }
@@ -335,7 +437,7 @@ namespace Kyber {
         for (u32 depth = 0; depth < m_Depth; ++depth) {
             rayCount++;
 
-            if (auto hit = m_Scene->Hit(ray, Interval(0.0001f, std::numeric_limits<f32>::infinity()))) {
+            if (auto hit = m_Aggregate->Hit(ray, Interval(0.0001f, std::numeric_limits<f32>::infinity()))) {
                 // TODO: emissions
                 accumulated += throughput * glm::vec3(0.0f);
 

@@ -130,8 +130,8 @@ namespace Kyber {
     
     }
 
-    BVH::BVH(std::vector<std::shared_ptr<Hittable>>&& primitives, std::vector<LinearBVHNode>&& nodes)
-        : m_Hittables(std::move(primitives)), m_Nodes(std::move(nodes))
+    BVH::BVH(std::vector<std::shared_ptr<Hittable>>&& primitives, std::vector<LinearBVHNode>&& nodes, const Stats& stats)
+        : m_Hittables(std::move(primitives)), m_Nodes(std::move(nodes)), m_Stats(stats)
     {
     }
 
@@ -186,7 +186,7 @@ namespace Kyber {
         }
     }
 
-    std::shared_ptr<Hittable> BVH::Create(std::vector<std::shared_ptr<Hittable>>&& primitives)
+    auto BVH::Create(std::vector<std::shared_ptr<Hittable>>&& primitives) -> std::unique_ptr<BVH>
     {
         if (primitives.empty()) return nullptr;
 
@@ -208,7 +208,14 @@ namespace Kyber {
         KINFO(" - Leaf Nodes: {}", totalLeaves);
         KINFO(" - Max Tree Depth: {}", maxDepth);
 
-        return std::make_shared<BVH>(std::move(primitives), std::move(linearNodes));
+        Stats stats {
+            .TotalHittables = static_cast<u32>(primitives.size()),
+            .InternalNodes = totalNodes,
+            .LeafNodes = totalLeaves,
+            .TreeDepth = maxDepth
+        };
+
+        return std::make_unique<BVH>(std::move(primitives), std::move(linearNodes), stats);
     }
 
 }

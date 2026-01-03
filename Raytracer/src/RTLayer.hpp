@@ -4,11 +4,11 @@
 
 #include "Camera.hpp"
 
+#include "Acceleration/BVH.hpp"
+
 #include "Core/TileScheduler.hpp"
 #include "Core/RenderQueue.hpp"
 #include "Core/PostProcess.hpp"
-
-#include "Hittables/Hittable.hpp"
 
 namespace Kyber {
 
@@ -35,24 +35,19 @@ namespace Kyber {
         auto TraceRay(Ray ray, u32& rayCount) -> glm::vec3;
 
     private:
-        // TODO: How do we set this
-        glm::uvec2 m_Resolution { 800, 600 };
-
-        u32 m_Width { 400 };
-        u32 m_Height { 300 };
-        u32 m_Samples { 128 };
+        glm::uvec2 m_Resolution { 1920, 1080 };
+        u32 m_Samples { 512 };
         u32 m_Depth { 8 };
-
         u32 m_TileSize { 32 };
+
+        TileScheduler m_Scheduler;
+        RenderQueue m_RenderQueue;
 
         std::atomic<bool> m_Running { false };
         std::vector<std::thread> m_Workers;
 
-        std::shared_ptr<Hittable> m_Scene;
+        std::unique_ptr<BVH> m_Aggregate;
         std::unique_ptr<Camera> m_Camera;
-
-        TileScheduler m_Scheduler;
-        RenderQueue m_RenderQueue;
 
         std::vector<glm::vec4> m_Accumulator;
         std::unique_ptr<PostProcess> m_PostProcess;
